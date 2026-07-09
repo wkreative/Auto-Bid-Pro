@@ -32,7 +32,7 @@ export default async function UserBidsPage() {
             </Link>
           </div>
         ) : bids?.map((bid) => {
-          const vehicle = bid.vehicles;
+          const vehicle: any = Array.isArray(bid.vehicles) ? bid.vehicles[0] : bid.vehicles;
           const primaryImage = vehicle.vehicle_images?.find((img: any) => img.is_primary)?.url || vehicle.vehicle_images?.[0]?.url || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0be2?q=80&w=2940&auto=format&fit=crop';
           
           let statusBadge;

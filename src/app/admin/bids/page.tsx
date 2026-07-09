@@ -35,15 +35,18 @@ export default async function AdminBidsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            {bids?.map((bid) => (
+            {bids?.map((bid) => {
+              const vehicle: any = Array.isArray(bid.vehicles) ? bid.vehicles[0] : bid.vehicles;
+              const profile: any = Array.isArray(bid.profiles) ? bid.profiles[0] : bid.profiles;
+              return (
               <tr key={bid.id} className="hover:bg-white/[0.02] transition-colors">
                 <td className="p-4">
-                  <p className="font-bold">{bid.vehicles?.brand} {bid.vehicles?.model}</p>
-                  <p className="text-xs text-gray-500">{bid.vehicles?.vin}</p>
+                  <p className="font-bold">{vehicle?.brand} {vehicle?.model}</p>
+                  <p className="text-xs text-gray-500">{vehicle?.vin}</p>
                 </td>
                 <td className="p-4">
-                  <p className="font-bold">{bid.profiles?.first_name} {bid.profiles?.last_name}</p>
-                  <p className="text-xs text-gray-500">{bid.profiles?.email}</p>
+                  <p className="font-bold">{profile?.first_name} {profile?.last_name}</p>
+                  <p className="text-xs text-gray-500">{profile?.email}</p>
                 </td>
                 <td className="p-4 font-bold text-green-400">
                   ${bid.amount?.toLocaleString()}
@@ -71,7 +74,8 @@ export default async function AdminBidsPage() {
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
             {bids?.length === 0 && (
               <tr>
                 <td colSpan={6} className="p-8 text-center text-gray-500">

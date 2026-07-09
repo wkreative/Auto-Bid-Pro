@@ -29,7 +29,7 @@ export default async function UserFavoritesPage() {
             <p className="text-gray-400">Guarda vehículos que te interesen usando el botón de corazón.</p>
           </div>
         ) : favorites?.map((fav) => {
-          const vehicle = fav.vehicles;
+          const vehicle: any = Array.isArray(fav.vehicles) ? fav.vehicles[0] : fav.vehicles;
           const primaryImage = vehicle.vehicle_images?.find((img: any) => img.is_primary)?.url || vehicle.vehicle_images?.[0]?.url || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0be2?q=80&w=2940&auto=format&fit=crop';
           
           return (
