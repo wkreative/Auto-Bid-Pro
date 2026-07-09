@@ -12,7 +12,6 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-20">
           <div className="flex-shrink-0 flex items-center gap-2">
             <img src="/logo.png" alt="Auto Bid Pro Logo" className="h-10 w-auto" />
-            <span className="font-bold text-xl tracking-tight text-white">Auto Bid Pro</span>
           </div>
           <div className="hidden md:flex space-x-8 items-center">
             <Link href="#how-it-works" className="text-gray-300 hover:text-white transition-colors">Cómo Funciona</Link>
