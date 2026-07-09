@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Auction Auto Hub
 
-## Getting Started
+Plataforma premium para la adquisición de vehículos de subasta.
 
-First, run the development server:
+## Tecnologías Utilizadas
+- **Frontend:** Next.js (App Router), React 19, Tailwind CSS v4.
+- **Backend/Base de datos:** Supabase (PostgreSQL), Supabase Auth, Storage.
+- **Pagos:** Stripe (Suscripciones).
+- **Iconos:** Lucide React.
+- **Estilos:** Glassmorphism moderno y minimalista con Tailwind CSS.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Estructura del Proyecto
+- `src/app/page.tsx`: Landing page principal (Área Pública).
+- `src/app/dashboard/`: Área Privada para usuarios con suscripción (Dashboard e Inventario).
+- `src/components/ui/`: Componentes reutilizables de UI (Navbar, Footer, etc).
+- `src/lib/supabase.ts`: Configuración del cliente de Supabase.
+- `supabase/schema.sql`: Estructura completa de la base de datos (Tablas, Tipos Enum, Row Level Security, Triggers).
+- `.env.local.example`: Ejemplo de las variables de entorno necesarias.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Pasos para ejecutar localmente
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Instalar dependencias:**
+   ```bash
+   npm install
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Configurar Supabase:**
+   - Ve a [Supabase](https://supabase.com) y crea un nuevo proyecto.
+   - Ejecuta el contenido del archivo `supabase/schema.sql` en el SQL Editor de Supabase.
+   - Copia la URL y la Anon Key de tu proyecto y renombra `.env.local.example` a `.env.local`, colocando ahí las credenciales.
 
-## Learn More
+3. **Configurar Stripe (Opcional por ahora):**
+   - Obtén tus llaves de prueba en Stripe y colócalas en `.env.local`.
 
-To learn more about Next.js, take a look at the following resources:
+4. **Ejecutar el servidor de desarrollo:**
+   ```bash
+   npm run dev
+   ```
+   Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Siguientes Pasos
+1. Conectar la autenticación en el Navbar (`/login`, `/register`) usando `supabase.auth`.
+2. Crear la integración con Stripe Checkout en la página de precios para generar las suscripciones.
+3. Crear el panel de administrador (`/admin`) para gestionar vehículos y aprobar ofertas.
+4. Conectar el Dashboard a los datos reales de la tabla `vehicles` de Supabase en vez del mock data.
