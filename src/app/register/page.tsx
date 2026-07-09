@@ -2,7 +2,14 @@ import Link from 'next/link';
 import { Car } from 'lucide-react';
 import { signup } from './actions';
 
-export default function RegisterPage() {
+export default async function RegisterPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const params = await searchParams;
+  const isError = params?.error === 'true';
+
   return (
     <div className="min-h-screen bg-[#050505] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -22,6 +29,11 @@ export default function RegisterPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="glass py-8 px-4 shadow sm:rounded-2xl sm:px-10 border border-white/10">
+          {isError && (
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm font-medium text-center">
+              Ocurrió un error al registrar tu cuenta. El correo ya existe o la contraseña es muy débil.
+            </div>
+          )}
           <form className="space-y-6" action={signup}>
             <div className="grid grid-cols-2 gap-4">
               <div>

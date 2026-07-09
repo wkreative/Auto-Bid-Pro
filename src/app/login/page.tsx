@@ -2,7 +2,14 @@ import Link from 'next/link';
 import { Car } from 'lucide-react';
 import { login } from './actions';
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const params = await searchParams;
+  const isError = params?.error === 'true';
+
   return (
     <div className="min-h-screen bg-[#050505] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -19,6 +26,11 @@ export default function LoginPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="glass py-8 px-4 shadow sm:rounded-2xl sm:px-10 border border-white/10">
+          {isError && (
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm font-medium text-center">
+              Credenciales incorrectas o el email no ha sido confirmado.
+            </div>
+          )}
           <form className="space-y-6" action={login}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-300">
