@@ -15,8 +15,8 @@ export default async function LoginPage({
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
           <Link href="/" className="flex items-center gap-2">
-            <Car className="h-10 w-10 text-primary" />
-            <span className="font-bold text-2xl text-white">Auto Hub</span>
+            <img src="/logo.png" alt="Auto Bid Pro Logo" className="h-12 w-auto" />
+            <span className="font-bold text-2xl text-white">Auto Bid Pro</span>
           </Link>
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-white">

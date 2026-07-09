@@ -8,8 +8,8 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div className="col-span-1 md:col-span-1">
             <div className="flex items-center gap-2 mb-6">
-              <Car className="h-6 w-6 text-primary" />
-              <span className="font-bold text-lg text-white">Auction Auto Hub</span>
+              <img src="/logo.png" alt="Auto Bid Pro Logo" className="h-8 w-auto" />
+              <span className="font-bold text-lg text-white">Auto Bid Pro</span>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed mb-6">
               Plataforma premium para la adquisición de vehículos de subasta con acceso exclusivo a inventario a nivel nacional.
@@ -56,7 +56,7 @@ export default function Footer() {
         
         <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-gray-500 text-sm">
-            &copy; {new Date().getFullYear()} Auction Auto Hub. Todos los derechos reservados.
+            &copy; {new Date().getFullYear()} Auto Bid Pro. Todos los derechos reservados.
           </p>
         </div>
       </div>

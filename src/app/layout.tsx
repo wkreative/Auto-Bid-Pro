@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Auction Auto Hub | Plataforma Premium de Subastas de Vehículos",
+  title: "Auto Bid Pro | Plataforma Premium de Subastas de Vehículos",
   description: "Plataforma web moderna para compra de vehículos de subasta. Accede a un inventario privado y coloca el precio máximo que estás dispuesto a pagar.",
 };
 

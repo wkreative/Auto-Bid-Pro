@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import { MapPin, Gauge, Shield, Zap, Info, ChevronLeft, Calendar, FileText } from 'lucide-react';
 import Link from 'next/link';
+import { placeBid } from './actions';
 
 export default async function VehicleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
@@ -111,11 +112,13 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
               <h3 className="font-bold mb-4">Colocar Oferta</h3>
               <p className="text-sm text-gray-400 mb-4">Ingresa el precio máximo que estás dispuesto a pagar por este vehículo.</p>
               
-              <form className="space-y-4">
+              <form action={placeBid} className="space-y-4">
+                <input type="hidden" name="vehicle_id" value={vehicle.id} />
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 font-bold">$</span>
                   <input 
                     type="number" 
+                    name="amount"
                     required
                     min={vehicle.starting_price}
                     placeholder="Ej. 15000"
