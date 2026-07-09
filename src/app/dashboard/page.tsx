@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Filter, ChevronDown, MapPin, Gauge, DollarSign, Activity } from 'lucide-react';
+import { Filter, ChevronDown, MapPin, Gauge, DollarSign, Activity, Car } from 'lucide-react';
 import { createClient } from '@/utils/supabase/server';
 
 export default async function DashboardPage() {
