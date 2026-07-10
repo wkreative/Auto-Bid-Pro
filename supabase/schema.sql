@@ -156,23 +156,35 @@ CREATE TABLE admin_logs (
 
 -- Row Level Security (RLS)
 
+-- Create a secure function to check admin status bypassing RLS
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN (
+    SELECT role = 'admin'
+    FROM public.profiles
+    WHERE id = auth.uid()
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can read own profile" ON profiles FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "Admins can do everything on profiles" ON profiles FOR ALL USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Admins can do everything on profiles" ON profiles FOR ALL USING (public.is_admin());
 
 ALTER TABLE vehicles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Anyone can read published vehicles" ON vehicles FOR SELECT USING (status = 'published');
-CREATE POLICY "Admins can manage vehicles" ON vehicles FOR ALL USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Admins can manage vehicles" ON vehicles FOR ALL USING (public.is_admin());
 
 ALTER TABLE vehicle_images ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Anyone can read vehicle images for published vehicles" ON vehicle_images FOR SELECT USING (EXISTS (SELECT 1 FROM vehicles WHERE vehicles.id = vehicle_id AND status = 'published'));
-CREATE POLICY "Admins can manage vehicle images" ON vehicle_images FOR ALL USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Admins can manage vehicle images" ON vehicle_images FOR ALL USING (public.is_admin());
 
 ALTER TABLE bids ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own bids" ON bids FOR SELECT USING (user_id = auth.uid());
 CREATE POLICY "Users can insert own bids" ON bids FOR INSERT WITH CHECK (user_id = auth.uid());
 CREATE POLICY "Users can update own bids if submitted" ON bids FOR UPDATE USING (user_id = auth.uid() AND status = 'submitted');
-CREATE POLICY "Admins can manage bids" ON bids FOR ALL USING (EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Admins can manage bids" ON bids FOR ALL USING (public.is_admin());
 
 ALTER TABLE favorites ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage own favorites" ON favorites FOR ALL USING (user_id = auth.uid());

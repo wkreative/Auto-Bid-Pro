@@ -75,13 +75,22 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
               </div>
               <div>
                 <p className="text-sm text-gray-400 mb-1 flex items-center gap-1"><FileText className="h-4 w-4" /> VIN</p>
-                <p className="font-bold text-lg">{vehicle.vin}</p>
+                <p className="font-bold text-lg break-all">{vehicle.vin}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-400 mb-1 flex items-center gap-1"><MapPin className="h-4 w-4" /> Ubicación</p>
-                <p className="font-bold text-lg">{vehicle.location}</p>
+                <p className="text-sm text-gray-400 mb-1 flex items-center gap-2"><MapPin className="h-4 w-4" /> Ubicación</p>
+                <p className="font-bold text-xl">{vehicle.location}</p>
               </div>
             </div>
+            
+            {vehicle.description && (
+              <div className="mt-8 pt-8 border-t border-white/5">
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><FileText className="h-5 w-5" /> Descripción del Vehículo</h3>
+                <div className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+                  {vehicle.description}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -89,7 +98,9 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
         <div className="space-y-6">
           <div className="glass p-8 rounded-3xl border border-white/5 sticky top-24">
             <h1 className="text-3xl font-bold mb-2">{vehicle.brand} {vehicle.model}</h1>
-            <p className="text-gray-400 mb-8">{vehicle.year} • {vehicle.vin}</p>
+            <p className="text-gray-400 flex items-center gap-2 text-sm mt-2 break-all">
+              {vehicle.year} • {vehicle.vin}
+            </p>
             
             <div className="space-y-4 mb-8">
               <div className="flex justify-between items-center p-4 bg-white/5 rounded-2xl">

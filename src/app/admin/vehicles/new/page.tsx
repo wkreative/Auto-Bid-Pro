@@ -33,6 +33,7 @@ export default function NewVehiclePage() {
         starting_price: parseFloat(formData.get('starting_price') as string),
         estimated_resale_value: parseFloat(formData.get('estimated_retail') as string) || null,
         estimated_repair_cost: parseFloat(formData.get('estimated_repair') as string) || null,
+        description: formData.get('description'),
         risk_level: formData.get('risk_level'),
         status: formData.get('status'),
       };
@@ -124,6 +125,10 @@ export default function NewVehiclePage() {
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2">Ubicación *</label>
               <input name="location" required type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-primary focus:outline-none" placeholder="Ej. Miami, FL" />
+            </div>
+            <div className="md:col-span-3">
+              <label className="block text-sm font-medium text-gray-400 mb-2">Descripción (Opcional)</label>
+              <textarea name="description" rows={4} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-primary focus:outline-none" placeholder="Ingresa una descripción del vehículo, condiciones, historial, etc."></textarea>
             </div>
           </div>
         </div>
