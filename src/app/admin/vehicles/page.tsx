@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import Link from 'next/link';
-import { Plus, Trash2, Eye } from 'lucide-react';
-import { deleteVehicle } from '../actions';
+import { Plus, Eye } from 'lucide-react';
+import DeleteVehicleButton from '@/components/admin/DeleteVehicleButton';
 
 export default async function AdminVehiclesPage() {
   const supabase = await createClient();
@@ -69,11 +69,7 @@ export default async function AdminVehiclesPage() {
                       <Link href={`/dashboard/vehicles/${vehicle.id}`} className="p-2 hover:bg-blue-500/20 text-blue-400 rounded-lg transition-colors" title="Ver">
                         <Eye className="h-4 w-4" />
                       </Link>
-                      <form action={deleteVehicle.bind(null, vehicle.id)} onSubmit={(e) => { if (!confirm('¿Eliminar este vehículo? Esta acción no se puede deshacer.')) e.preventDefault(); }}>
-                        <button type="submit" className="p-2 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors" title="Eliminar">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </form>
+                      <DeleteVehicleButton vehicleId={vehicle.id} />
                     </div>
                   </td>
                 </tr>
