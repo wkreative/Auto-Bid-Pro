@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { Car, LayoutDashboard, Search, Heart, Bell, Settings, LogOut } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -9,7 +10,26 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+
+  // Sincronizar el input con la URL si alguien navega hacia atras/adelante
+  useEffect(() => {
+    setSearchQuery(searchParams.get('q') || '');
+  }, [searchParams]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const currentParams = new URLSearchParams(Array.from(searchParams.entries()));
+    if (searchQuery.trim()) {
+      currentParams.set('q', searchQuery.trim());
+    } else {
+      currentParams.delete('q');
+    }
+    router.push(`/dashboard?${currentParams.toString()}`);
+  };
+
   const navItems = [
     { name: 'Inventario', href: '/dashboard', icon: <Search className="h-5 w-5" /> },
     { name: 'Mis Ofertas', href: '/dashboard/bids', icon: <LayoutDashboard className="h-5 w-5" /> },
@@ -67,14 +87,16 @@ export default function DashboardLayout({
           </div>
           
           <div className="hidden md:flex flex-1 max-w-xl">
-            <div className="relative w-full">
+            <form onSubmit={handleSearch} className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
               <input 
                 type="text" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Buscar por marca, modelo o VIN..." 
                 className="w-full bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-4 text-white focus:outline-none focus:border-primary/50 transition-colors"
               />
-            </div>
+            </form>
           </div>
           
           <div className="flex items-center gap-4">

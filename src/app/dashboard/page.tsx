@@ -2,16 +2,43 @@ import Link from 'next/link';
 import { Filter, ChevronDown, MapPin, Gauge, DollarSign, Activity, Car } from 'lucide-react';
 import { createClient } from '@/utils/supabase/server';
 
-export default async function DashboardPage() {
+type Props = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+export default async function DashboardPage({ searchParams }: Props) {
+  const params = await searchParams;
+  const q = typeof params.q === 'string' ? params.q : '';
+  const filter = typeof params.filter === 'string' ? params.filter : 'Todos';
+
   const supabase = await createClient();
-  const { data: vehicles } = await supabase
+  let query = supabase
     .from('vehicles')
-    .select(`
-      *,
-      vehicle_images(url, is_primary)
-    `)
-    .eq('status', 'published')
-    .order('created_at', { ascending: false });
+    .select('*, vehicle_images(url, is_primary)')
+    .eq('status', 'published');
+
+  // Aplicar Búsqueda
+  if (q) {
+    query = query.or(`brand.ilike.%${q}%,model.ilike.%${q}%,vin.ilike.%${q}%`);
+  }
+
+  // Aplicar Filtros Rápidos
+  if (filter !== 'Todos') {
+    if (filter === 'Bajo Riesgo') {
+      query = query.eq('risk_level', 'low');
+    } else if (filter === 'Alto Margen') {
+      // Un ejemplo de filtro custom: donde el profit estimado sea mayor a un valor (si lo tuvieramos)
+      // O simplemente ordenamos distinto
+    } else {
+      // Filtrar por texto exacto de modelo/marca si coincide (SUVs, Deportivos, etc.)
+      // Nota: Como no tenemos una columna "tipo", haremos una búsqueda en la descripción o modelo
+      query = query.or(`brand.ilike.%${filter}%,model.ilike.%${filter}%,description.ilike.%${filter}%`);
+    }
+  }
+
+  query = query.order('created_at', { ascending: false });
+  
+  const { data: vehicles } = await query;
 
   return (
     <div>
@@ -35,15 +62,16 @@ export default async function DashboardPage() {
       
       {/* Quick Filters */}
       <div className="flex flex-wrap gap-2 mb-8">
-        {['Todos', 'SUVs', 'Deportivos', 'Sedanes', 'Bajo Riesgo', 'Alto Margen'].map((filter, idx) => (
-          <button 
+        {['Todos', 'SUV', 'Sedan', 'Deportivo', 'Bajo Riesgo'].map((f, idx) => (
+          <Link 
+            href={`/dashboard?${new URLSearchParams({ ...params, filter: f }).toString()}`}
             key={idx}
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              idx === 0 ? 'bg-primary text-white' : 'glass text-gray-300 hover:text-white hover:border-primary/50'
+              filter === f ? 'bg-primary text-white' : 'glass text-gray-300 hover:text-white hover:border-primary/50'
             }`}
           >
-            {filter}
-          </button>
+            {f}
+          </Link>
         ))}
       </div>
 
@@ -52,8 +80,8 @@ export default async function DashboardPage() {
         {vehicles?.length === 0 ? (
           <div className="col-span-full text-center py-24 glass rounded-3xl">
             <Car className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold mb-2">No hay vehículos disponibles</h3>
-            <p className="text-gray-400">El administrador aún no ha publicado vehículos en el inventario.</p>
+            <h3 className="text-2xl font-bold mb-2">No se encontraron vehículos</h3>
+            <p className="text-gray-400">Prueba cambiando los filtros o el término de búsqueda.</p>
           </div>
         ) : vehicles?.map((vehicle) => {
           const primaryImage = vehicle.vehicle_images?.find((img: any) => img.is_primary)?.url || vehicle.vehicle_images?.[0]?.url || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0be2?q=80&w=2940&auto=format&fit=crop';
