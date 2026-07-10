@@ -53,23 +53,32 @@ export default function NewVehiclePage() {
 
       if (vehicleError) throw vehicleError;
 
-      // 2. Upload images via API route
+      // 2. Upload images
       const errors: string[] = [];
       if (files.length > 0 && vehicle) {
-        const formData = new FormData();
-        for (const file of files) {
-          formData.append('files', file);
-        }
-        formData.append('vehicleId', vehicle.id);
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${vehicle.id}/${Math.random().toString(36).slice(2)}.${fileExt}`;
 
-        const res = await fetch('/api/storage/upload', { method: 'POST', body: formData });
-        const result = await res.json();
+          const { error: uploadError } = await supabase.storage
+            .from('vehicle_media')
+            .upload(fileName, file);
 
-        if (!res.ok || result.error) {
-          errors.push(`Error del servidor: ${result.error || 'Unknown'}`);
-        } else {
-          for (const e of result.errors || []) {
-            errors.push(`${e.file}: ${e.error}`);
+          if (!uploadError) {
+            const { data: publicUrlData } = supabase.storage
+              .from('vehicle_media')
+              .getPublicUrl(fileName);
+
+            await supabase.from('vehicle_images').insert([
+              {
+                vehicle_id: vehicle.id,
+                url: publicUrlData.publicUrl,
+                is_primary: i === 0,
+              }
+            ]);
+          } else {
+            errors.push(`${file.name}: ${uploadError.message}`);
           }
         }
       }
@@ -86,7 +95,11 @@ export default function NewVehiclePage() {
 
     } catch (error: any) {
       console.error(error);
-      alert('Hubo un error al guardar: ' + error.message);
+      if (error.message?.includes('vehicles_vin_key')) {
+        alert('Error: Ya existe un vehículo con ese VIN. Usa un VIN diferente.');
+      } else {
+        alert('Hubo un error al guardar: ' + error.message);
+      }
     } finally {
       setIsSubmitting(false);
     }
