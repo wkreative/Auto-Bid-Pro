@@ -57,6 +57,10 @@ export default function NewVehiclePage() {
             .from('vehlcle_media')
             .upload(fileName, file);
 
+          if (uploadError) {
+            alert(`Error al subir la imagen: ${uploadError.message}. Verifica que el bucket existe y tiene permisos.`);
+          }
+
           if (!uploadError) {
             const { data: publicUrlData } = supabase.storage
               .from('vehlcle_media')

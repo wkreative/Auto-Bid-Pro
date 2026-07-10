@@ -24,15 +24,12 @@ export default async function DashboardPage({ searchParams }: Props) {
 
   // Aplicar Filtros Rápidos
   if (filter !== 'Todos') {
-    if (filter === 'Bajo Riesgo') {
+    if (filter === 'Riesgo Bajo') {
       query = query.eq('risk_level', 'low');
-    } else if (filter === 'Alto Margen') {
-      // Un ejemplo de filtro custom: donde el profit estimado sea mayor a un valor (si lo tuvieramos)
-      // O simplemente ordenamos distinto
-    } else {
-      // Filtrar por texto exacto de modelo/marca si coincide (SUVs, Deportivos, etc.)
-      // Nota: Como no tenemos una columna "tipo", haremos una búsqueda en la descripción o modelo
-      query = query.or(`brand.ilike.%${filter}%,model.ilike.%${filter}%,description.ilike.%${filter}%`);
+    } else if (filter === 'Riesgo Medio') {
+      query = query.eq('risk_level', 'medium');
+    } else if (filter === 'Riesgo Alto') {
+      query = query.eq('risk_level', 'high');
     }
   }
 
@@ -62,7 +59,7 @@ export default async function DashboardPage({ searchParams }: Props) {
       
       {/* Quick Filters */}
       <div className="flex flex-wrap gap-2 mb-8">
-        {['Todos', 'SUV', 'Sedan', 'Deportivo', 'Bajo Riesgo'].map((f, idx) => (
+        {['Todos', 'Riesgo Bajo', 'Riesgo Medio', 'Riesgo Alto'].map((f, idx) => (
           <Link 
             href={`/dashboard?${new URLSearchParams({ ...params, filter: f }).toString()}`}
             key={idx}
