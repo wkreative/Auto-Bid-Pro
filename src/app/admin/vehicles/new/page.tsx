@@ -54,12 +54,12 @@ export default function NewVehiclePage() {
           const fileName = `${vehicle.id}/${Math.random()}.${fileExt}`;
 
           const { error: uploadError } = await supabase.storage
-            .from('vehicle_media')
+            .from('vehlcle_media')
             .upload(fileName, file);
 
           if (!uploadError) {
             const { data: publicUrlData } = supabase.storage
-              .from('vehicle_media')
+              .from('vehlcle_media')
               .getPublicUrl(fileName);
 
             await supabase.from('vehicle_images').insert([
