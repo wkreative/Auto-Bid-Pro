@@ -7,18 +7,24 @@ import { useRouter } from 'next/navigation';
 export default function NewVehiclePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [uploadErrors, setUploadErrors] = useState<string[]>([]);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setFiles(Array.from(e.target.files));
+      setUploadErrors([]);
+      setUploadSuccess(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setUploadErrors([]);
+    setUploadSuccess(false);
 
     try {
       const formData = new FormData(e.currentTarget);
@@ -47,37 +53,36 @@ export default function NewVehiclePage() {
 
       if (vehicleError) throw vehicleError;
 
-      // 2. Upload images
+      // 2. Upload images via API route
+      const errors: string[] = [];
       if (files.length > 0 && vehicle) {
+        const formData = new FormData();
         for (const file of files) {
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${vehicle.id}/${Math.random()}.${fileExt}`;
+          formData.append('files', file);
+        }
+        formData.append('vehicleId', vehicle.id);
 
-          const { error: uploadError } = await supabase.storage
-            .from('vehlcle_media')
-            .upload(fileName, file);
+        const res = await fetch('/api/storage/upload', { method: 'POST', body: formData });
+        const result = await res.json();
 
-          if (uploadError) {
-            alert(`Error al subir la imagen: ${uploadError.message}. Verifica que el bucket existe y tiene permisos.`);
-          }
-
-          if (!uploadError) {
-            const { data: publicUrlData } = supabase.storage
-              .from('vehlcle_media')
-              .getPublicUrl(fileName);
-
-            await supabase.from('vehicle_images').insert([
-              {
-                vehicle_id: vehicle.id,
-                url: publicUrlData.publicUrl,
-              }
-            ]);
+        if (!res.ok || result.error) {
+          errors.push(`Error del servidor: ${result.error || 'Unknown'}`);
+        } else {
+          for (const e of result.errors || []) {
+            errors.push(`${e.file}: ${e.error}`);
           }
         }
       }
 
-      alert('Vehículo publicado exitosamente.');
-      router.push('/admin');
+      if (errors.length > 0) {
+        setUploadErrors(errors);
+      } else {
+        setUploadSuccess(true);
+      }
+
+      if (errors.length < files.length) {
+        setTimeout(() => router.push('/admin'), 1500);
+      }
 
     } catch (error: any) {
       console.error(error);
@@ -184,6 +189,20 @@ export default function NewVehiclePage() {
             <p className="text-gray-300 font-medium">Haz clic o arrastra imágenes aquí</p>
             <p className="text-sm text-gray-500 mt-2">{files.length} archivos seleccionados</p>
           </div>
+          {uploadErrors.length > 0 && (
+            <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+              <p className="text-red-400 font-bold mb-1">{uploadErrors.length} imagen(es) no pudieron subirse</p>
+              <ul className="text-sm text-red-300 space-y-1">
+                {uploadErrors.map((err, i) => <li key={i}>{err}</li>)}
+              </ul>
+              <p className="text-xs text-gray-500 mt-2">El vehículo se guardó sin esas imágenes.</p>
+            </div>
+          )}
+          {uploadSuccess && (
+            <div className="mt-4 p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+              <p className="text-green-400 font-bold">Vehículo publicado exitosamente. Redirigiendo...</p>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end">

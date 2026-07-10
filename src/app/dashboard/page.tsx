@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Filter, ChevronDown, MapPin, Gauge, DollarSign, Activity, Car } from 'lucide-react';
+import { Search, MapPin, Gauge, Car } from 'lucide-react';
 import { createClient } from '@/utils/supabase/server';
 
 type Props = {
@@ -39,29 +39,33 @@ export default async function DashboardPage({ searchParams }: Props) {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Inventario Disponible</h1>
-          <p className="text-gray-400">Descubre oportunidades premium analizadas por nuestros expertos.</p>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Inventario Disponible</h1>
+        <p className="text-gray-400 mb-6">Descubre oportunidades premium analizadas por nuestros expertos.</p>
         
-        <div className="flex gap-3">
-          <button className="glass px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-white/5 transition-colors">
-            <Filter className="h-4 w-4" />
-            <span>Filtros</span>
-          </button>
-          <button className="glass px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-white/5 transition-colors">
-            <span>Ordenar por: Recientes</span>
-            <ChevronDown className="h-4 w-4" />
-          </button>
-        </div>
+        {/* Search Bar */}
+        <form action="/dashboard" method="GET" className="relative max-w-xl">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <input
+            type="text"
+            name="q"
+            defaultValue={q}
+            placeholder="Buscar por marca, modelo o VIN..."
+            className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary transition-colors"
+          />
+          {filter !== 'Todos' && <input type="hidden" name="filter" value={filter} />}
+        </form>
       </div>
       
       {/* Quick Filters */}
       <div className="flex flex-wrap gap-2 mb-8">
-        {['Todos', 'Riesgo Bajo', 'Riesgo Medio', 'Riesgo Alto'].map((f, idx) => (
+        {['Todos', 'Riesgo Bajo', 'Riesgo Medio', 'Riesgo Alto'].map((f, idx) => {
+          const linkParams = new URLSearchParams();
+          if (q) linkParams.set('q', q);
+          if (f !== 'Todos') linkParams.set('filter', f);
+          return (
           <Link 
-            href={`/dashboard?${new URLSearchParams({ ...params, filter: f }).toString()}`}
+            href={`/dashboard${linkParams.toString() ? '?' + linkParams.toString() : ''}`}
             key={idx}
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
               filter === f ? 'bg-primary text-white' : 'glass text-gray-300 hover:text-white hover:border-primary/50'
@@ -69,7 +73,7 @@ export default async function DashboardPage({ searchParams }: Props) {
           >
             {f}
           </Link>
-        ))}
+        )})}
       </div>
 
       {/* Vehicle Grid */}

@@ -192,6 +192,32 @@ CREATE POLICY "Users can manage own favorites" ON favorites FOR ALL USING (user_
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage own notifications" ON notifications FOR ALL USING (user_id = auth.uid());
 
+-- Storage RLS Policies (for the vehicle_media bucket)
+-- RLS is already enabled by default on storage.objects in Supabase
+INSERT INTO storage.buckets (id, name, public) VALUES ('vehicle_media', 'vehicle_media', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+DROP POLICY IF EXISTS "Anyone can view files in vehicle_media" ON storage.objects;
+CREATE POLICY "Anyone can view files in vehicle_media"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'vehicle_media');
+
+DROP POLICY IF EXISTS "Admins can upload files to vehicle_media" ON storage.objects;
+CREATE POLICY "Admins can upload files to vehicle_media"
+  ON storage.objects FOR INSERT
+  WITH CHECK (bucket_id = 'vehicle_media' AND public.is_admin());
+
+DROP POLICY IF EXISTS "Admins can update files in vehicle_media" ON storage.objects;
+CREATE POLICY "Admins can update files in vehicle_media"
+  ON storage.objects FOR UPDATE
+  USING (bucket_id = 'vehicle_media' AND public.is_admin())
+  WITH CHECK (bucket_id = 'vehicle_media' AND public.is_admin());
+
+DROP POLICY IF EXISTS "Admins can delete files from vehicle_media" ON storage.objects;
+CREATE POLICY "Admins can delete files from vehicle_media"
+  ON storage.objects FOR DELETE
+  USING (bucket_id = 'vehicle_media' AND public.is_admin());
+
 -- Triggers
 
 -- Trigger to automatically create profile on signup
