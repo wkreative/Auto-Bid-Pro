@@ -64,7 +64,7 @@ export default function DashboardLayout({
         {/* Top Header */}
         <header className="h-20 glass border-b border-white/5 flex items-center justify-between px-8 sticky top-0 z-30">
           <div className="md:hidden flex items-center gap-2">
-            <img src="/logo.png" alt="Auto Bid Pro Logo" className="h-8 w-auto" />
+            <img src="/logo.png" alt="Auto Bid Pro Logo" className="h-8 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
             <span className="font-bold text-lg text-white">Auto Bid Pro</span>
           </div>
           

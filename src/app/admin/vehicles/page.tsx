@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import Link from 'next/link';
-import { Plus, Eye } from 'lucide-react';
+import { Plus, Eye, Edit } from 'lucide-react';
 import DeleteVehicleButton from '@/components/admin/DeleteVehicleButton';
 
 export default async function AdminVehiclesPage() {
@@ -32,7 +32,8 @@ export default async function AdminVehiclesPage() {
             <tr>
               <th className="p-4 font-medium text-gray-400">Vehículo</th>
               <th className="p-4 font-medium text-gray-400">VIN</th>
-              <th className="p-4 font-medium text-gray-400">Precio Inicial</th>
+              <th className="p-4 font-medium text-gray-400">Tipo</th>
+              <th className="p-4 font-medium text-gray-400">Precio</th>
               <th className="p-4 font-medium text-gray-400">Estado</th>
               <th className="p-4 font-medium text-gray-400">Acciones</th>
             </tr>
@@ -54,8 +55,13 @@ export default async function AdminVehiclesPage() {
                   <td className="p-4 text-sm font-mono text-gray-400">
                     {vehicle.vin}
                   </td>
+                  <td className="p-4">
+                    <span className={`text-xs font-bold px-2 py-1 rounded-full ${vehicle.sale_type === 'direct_sale' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                      {vehicle.sale_type === 'direct_sale' ? 'Directa' : 'Subasta'}
+                    </span>
+                  </td>
                   <td className="p-4 font-bold">
-                    ${vehicle.starting_price?.toLocaleString()}
+                    ${(vehicle.direct_sale_price || vehicle.starting_price)?.toLocaleString()}
                   </td>
                   <td className="p-4">
                     <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${
@@ -69,6 +75,9 @@ export default async function AdminVehiclesPage() {
                       <Link href={`/dashboard/vehicles/${vehicle.id}`} className="p-2 hover:bg-blue-500/20 text-blue-400 rounded-lg transition-colors" title="Ver">
                         <Eye className="h-4 w-4" />
                       </Link>
+                      <Link href={`/admin/vehicles/${vehicle.id}/edit`} className="p-2 hover:bg-yellow-500/20 text-yellow-400 rounded-lg transition-colors" title="Editar">
+                        <Edit className="h-4 w-4" />
+                      </Link>
                       <DeleteVehicleButton vehicleId={vehicle.id} />
                     </div>
                   </td>
@@ -77,7 +86,7 @@ export default async function AdminVehiclesPage() {
             })}
             {vehicles?.length === 0 && (
               <tr>
-                <td colSpan={5} className="p-8 text-center text-gray-500">
+                <td colSpan={6} className="p-8 text-center text-gray-500">
                   No hay vehículos registrados.
                 </td>
               </tr>

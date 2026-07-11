@@ -1,7 +1,7 @@
 import Navbar from '@/components/ui/Navbar';
 import Footer from '@/components/ui/Footer';
 import Link from 'next/link';
-import { ArrowRight, CheckCircle2, Shield, Zap, Target, Search, MousePointerClick, Car, HelpCircle, ChevronRight } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Shield, Zap, Target, Search, MousePointerClick, Car, HelpCircle, ChevronRight, CreditCard, ShoppingCart, Percent, Clock } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -132,7 +132,7 @@ export default function Home() {
             </div>
             <div className="relative h-[600px] w-full rounded-2xl overflow-hidden glass p-2">
                <img 
-                src="https://images.unsplash.com/photo-1549317661-bd32c8ce0be2?q=80&w=2940&auto=format&fit=crop" 
+                src="https://images.unsplash.com/photo-1560179707-f14e90ef3623?q=80&w=2940&auto=format&fit=crop" 
                 alt="Dashboard Preview" 
                 className="w-full h-full object-cover rounded-xl opacity-80"
               />
@@ -151,6 +151,78 @@ export default function Home() {
                  <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
                    <div className="bg-primary h-full w-[75%]"></div>
                  </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Services: Direct Purchase & Financing */}
+      <section className="py-24 bg-[#0a0a0a]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Más Formas de Adquirir</h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">No solo subastas. Ofrecemos opciones flexibles para cada tipo de comprador.</p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="glass p-8 rounded-3xl border border-green-500/20 relative overflow-hidden group hover:border-green-500/40 transition-all">
+              <div className="absolute top-0 right-0 p-4">
+                <span className="bg-green-500/20 text-green-400 text-xs font-bold px-3 py-1 rounded-full">Nuevo</span>
+              </div>
+              <div className="h-14 w-14 bg-green-500/10 rounded-2xl flex items-center justify-center mb-6">
+                <ShoppingCart className="h-7 w-7 text-green-400" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3">Compra Directa</h3>
+              <p className="text-gray-400 mb-6">Adquiere vehículos de forma inmediata a un precio fijo. Sin subastas, sin esperas. Ideal si ya encontraste el vehículo perfecto.</p>
+              <ul className="space-y-3 mb-8">
+                {[
+                  'Precio fijo transparente — sin pujas',
+                  'Compra en pocos clics',
+                  'Inspección física disponible antes de comprar',
+                  'Proceso guiado por agentes expertos'
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-3 text-sm text-gray-300">
+                    <CheckCircle2 className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/dashboard?sale_type=direct_sale" className="inline-flex items-center gap-2 text-green-400 hover:text-green-300 font-bold transition-colors">
+                Ver Vehículos en Venta Directa <ArrowRight className="h-4 w-4" />
+              </Link>
+              <div className="absolute -bottom-10 -right-10 opacity-5 group-hover:opacity-10 transition-opacity">
+                <ShoppingCart className="h-40 w-40" />
+              </div>
+            </div>
+
+            <div className="glass p-8 rounded-3xl border border-primary/20 relative overflow-hidden group hover:border-primary/40 transition-all">
+              <div className="absolute top-0 right-0 p-4">
+                <span className="bg-primary/20 text-primary text-xs font-bold px-3 py-1 rounded-full">Nuevo</span>
+              </div>
+              <div className="h-14 w-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-6">
+                <CreditCard className="h-7 w-7 text-primary" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3">Financiamiento</h3>
+              <p className="text-gray-400 mb-6">Haz realidad la compra de tu vehículo con planes de financiamiento flexibles. Aprobación rápida y tasas competitivas.</p>
+              <ul className="space-y-3 mb-8">
+                {[
+                  'Tasas desde 8.9% anual',
+                  'Plazos de 12 a 60 meses',
+                  'Aprobación en 24-48 horas',
+                  'Sin penalización por pago anticipado'
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-3 text-sm text-gray-300">
+                    <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link href="#pricing" className="inline-flex items-center gap-2 text-primary hover:text-blue-300 font-bold transition-colors">
+                Solicitar Financiamiento <ArrowRight className="h-4 w-4" />
+              </Link>
+              <div className="absolute -bottom-10 -right-10 opacity-5 group-hover:opacity-10 transition-opacity">
+                <CreditCard className="h-40 w-40" />
               </div>
             </div>
           </div>
