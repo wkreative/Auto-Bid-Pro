@@ -62,7 +62,7 @@ export async function createUser(formData: FormData) {
 
     const { error: profileError } = await supabase
       .from('profiles')
-      .insert({
+      .upsert({
         id: authData.user.id,
         first_name: firstName,
         last_name: lastName,

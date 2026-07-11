@@ -81,33 +81,33 @@ export default function VehicleForm({ vehicle }: VehicleFormProps) {
           .from('vehicles').insert([vehicleData]).select().single();
         if (vehicleError) throw vehicleError;
         vehicleId = newVehicle.id;
-
-        const errors: string[] = [];
-        for (let i = 0; i < imageFiles.length; i++) {
-          const file = imageFiles[i];
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${vehicleId}/images/${Math.random().toString(36).slice(2)}.${fileExt}`;
-          const { error: uploadError } = await supabase.storage.from('vehicle_media').upload(fileName, file);
-          if (!uploadError) {
-            const { data: publicUrlData } = supabase.storage.from('vehicle_media').getPublicUrl(fileName);
-            await supabase.from('vehicle_images').insert([{ vehicle_id: vehicleId, url: publicUrlData.publicUrl, is_primary: i === 0 }]);
-          } else {
-            errors.push(`Imagen ${file.name}: ${uploadError.message}`);
-          }
-        }
-        for (const file of videoFiles) {
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${vehicleId}/videos/${Math.random().toString(36).slice(2)}.${fileExt}`;
-          const { error: uploadError } = await supabase.storage.from('vehicle_media').upload(fileName, file);
-          if (!uploadError) {
-            const { data: publicUrlData } = supabase.storage.from('vehicle_media').getPublicUrl(fileName);
-            await supabase.from('vehicle_videos').insert([{ vehicle_id: vehicleId, url: publicUrlData.publicUrl }]);
-          } else {
-            errors.push(`Video ${file.name}: ${uploadError.message}`);
-          }
-        }
-        if (errors.length > 0) setUploadErrors(errors);
       }
+
+      const errors: string[] = [];
+      for (let i = 0; i < imageFiles.length; i++) {
+        const file = imageFiles[i];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${vehicleId}/images/${Math.random().toString(36).slice(2)}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('vehicle_media').upload(fileName, file);
+        if (!uploadError) {
+          const { data: publicUrlData } = supabase.storage.from('vehicle_media').getPublicUrl(fileName);
+          await supabase.from('vehicle_images').insert([{ vehicle_id: vehicleId, url: publicUrlData.publicUrl, is_primary: i === 0 }]);
+        } else {
+          errors.push(`Imagen ${file.name}: ${uploadError.message}`);
+        }
+      }
+      for (const file of videoFiles) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${vehicleId}/videos/${Math.random().toString(36).slice(2)}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('vehicle_media').upload(fileName, file);
+        if (!uploadError) {
+          const { data: publicUrlData } = supabase.storage.from('vehicle_media').getPublicUrl(fileName);
+          await supabase.from('vehicle_videos').insert([{ vehicle_id: vehicleId, url: publicUrlData.publicUrl }]);
+        } else {
+          errors.push(`Video ${file.name}: ${uploadError.message}`);
+        }
+      }
+      if (errors.length > 0) setUploadErrors(errors);
 
       setUploadSuccess(true);
       setTimeout(() => router.push('/admin/vehicles'), 1500);
@@ -230,31 +230,30 @@ export default function VehicleForm({ vehicle }: VehicleFormProps) {
           </div>
         </div>
 
-        {!isEdit && (
-          <div className="glass p-8 rounded-2xl border border-white/5">
-            <h2 className="text-xl font-bold mb-6">Imágenes y Videos</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="border-2 border-dashed border-white/10 rounded-2xl p-8 text-center hover:border-primary/50 transition-colors bg-white/5 relative">
-                <input type="file" multiple accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                <Upload className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-300 font-medium">Imágenes</p>
-                <p className="text-sm text-gray-500 mt-2">{imageFiles.length} seleccionados</p>
-              </div>
-              <div className="border-2 border-dashed border-white/10 rounded-2xl p-8 text-center hover:border-primary/50 transition-colors bg-white/5 relative">
-                <input type="file" multiple accept="video/*" onChange={handleVideoChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                <Upload className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-300 font-medium">Videos</p>
-                <p className="text-sm text-gray-500 mt-2">{videoFiles.length} seleccionados</p>
-              </div>
+        <div className="glass p-8 rounded-2xl border border-white/5">
+          <h2 className="text-xl font-bold mb-6">Imágenes y Videos</h2>
+          <p className="text-sm text-gray-400 mb-4">Puedes agregar más imágenes o videos incluso después de crear el vehículo.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="border-2 border-dashed border-white/10 rounded-2xl p-8 text-center hover:border-primary/50 transition-colors bg-white/5 relative">
+              <input type="file" multiple accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+              <Upload className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-300 font-medium">Imágenes</p>
+              <p className="text-sm text-gray-500 mt-2">{imageFiles.length} seleccionados</p>
             </div>
-            {uploadErrors.length > 0 && (
-              <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
-                <p className="text-red-400 font-bold mb-1">{uploadErrors.length} archivo(s) no pudieron subirse</p>
-                <ul className="text-sm text-red-300 space-y-1">{uploadErrors.map((err, i) => <li key={i}>{err}</li>)}</ul>
-              </div>
-            )}
+            <div className="border-2 border-dashed border-white/10 rounded-2xl p-8 text-center hover:border-primary/50 transition-colors bg-white/5 relative">
+              <input type="file" multiple accept="video/*" onChange={handleVideoChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+              <Upload className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-300 font-medium">Videos</p>
+              <p className="text-sm text-gray-500 mt-2">{videoFiles.length} seleccionados</p>
+            </div>
           </div>
-        )}
+          {uploadErrors.length > 0 && (
+            <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+              <p className="text-red-400 font-bold mb-1">{uploadErrors.length} archivo(s) no pudieron subirse</p>
+              <ul className="text-sm text-red-300 space-y-1">{uploadErrors.map((err, i) => <li key={i}>{err}</li>)}</ul>
+            </div>
+          )}
+        </div>
 
         {uploadSuccess && (
           <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl">

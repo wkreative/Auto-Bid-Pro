@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import { MapPin, Gauge, Shield, Zap, Info, ChevronLeft, Calendar, FileText, CreditCard, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
+import MediaCarousel from '@/components/MediaCarousel';
 import { placeBid } from './actions';
 
 export default async function VehicleDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -10,15 +11,17 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
 
   const { data: vehicle, error } = await supabase
     .from('vehicles')
-    .select('*, vehicle_images(url, is_primary)')
+    .select('*, vehicle_images(url, is_primary), vehicle_videos(url)')
     .eq('id', resolvedParams.id)
     .single();
 
   if (error || !vehicle) notFound();
 
   const isDirectSale = vehicle.sale_type === 'direct_sale';
-  const displayPrice = isDirectSale ? vehicle.direct_sale_price : vehicle.starting_price;
-  const primaryImage = vehicle.vehicle_images?.find((img: any) => img.is_primary)?.url || vehicle.vehicle_images?.[0]?.url || 'https://images.unsplash.com/photo-1549317661-bd32c8ce0be2?q=80&w=2940&auto=format&fit=crop';
+  const mediaItems = [
+    ...(vehicle.vehicle_images?.map((img: any) => ({ type: 'image' as const, url: img.url, is_primary: img.is_primary })) || []),
+    ...(vehicle.vehicle_videos?.map((vid: any) => ({ type: 'video' as const, url: vid.url })) || []),
+  ];
 
   return (
     <div className="max-w-7xl mx-auto pb-24">
@@ -31,35 +34,24 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           <div className="glass rounded-3xl overflow-hidden p-2 border border-white/5">
-            <div className="relative h-[400px] md:h-[500px] w-full rounded-2xl overflow-hidden">
-              <img src={primaryImage} alt={`${vehicle.brand} ${vehicle.model}`} className="w-full h-full object-cover" />
-              <div className="absolute top-4 right-4 flex flex-col gap-2">
-                {vehicle.risk_level && (
-                  <span className={`px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider backdrop-blur-md ${
-                    vehicle.risk_level === 'low' ? 'bg-green-500/80 text-white' :
-                    vehicle.risk_level === 'medium' ? 'bg-yellow-500/80 text-white' :
-                    'bg-red-500/80 text-white'
-                  }`}>
-                    Riesgo {vehicle.risk_level === 'low' ? 'Bajo' : vehicle.risk_level === 'medium' ? 'Medio' : 'Alto'}
-                  </span>
-                )}
-                <span className={`px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider backdrop-blur-md ${
-                  isDirectSale ? 'bg-green-500/80 text-white' : 'bg-blue-500/80 text-white'
-                }`}>
-                  {isDirectSale ? 'Compra Directa' : 'Subasta'}
-                </span>
-              </div>
-            </div>
+            <MediaCarousel items={mediaItems} />
+          </div>
 
-            {vehicle.vehicle_images && vehicle.vehicle_images.length > 1 && (
-              <div className="flex gap-2 mt-2 overflow-x-auto p-2">
-                {vehicle.vehicle_images.map((img: any, idx: number) => (
-                  <div key={idx} className="h-24 w-32 flex-shrink-0 rounded-xl overflow-hidden cursor-pointer border-2 border-transparent hover:border-primary transition-colors">
-                    <img src={img.url} className="w-full h-full object-cover" />
-                  </div>
-                ))}
-              </div>
+          <div className="flex flex-wrap gap-2">
+            {vehicle.risk_level && (
+              <span className={`px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider backdrop-blur-md ${
+                vehicle.risk_level === 'low' ? 'bg-green-500/20 text-green-400' :
+                vehicle.risk_level === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                'bg-red-500/20 text-red-400'
+              }`}>
+                Riesgo {vehicle.risk_level === 'low' ? 'Bajo' : vehicle.risk_level === 'medium' ? 'Medio' : 'Alto'}
+              </span>
             )}
+            <span className={`px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider backdrop-blur-md ${
+              isDirectSale ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
+            }`}>
+              {isDirectSale ? 'Compra Directa' : 'Subasta'}
+            </span>
           </div>
 
           <div className="glass p-8 rounded-3xl border border-white/5">
