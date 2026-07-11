@@ -11,7 +11,11 @@ export default function DeleteUserButton({ userId, userName }: { userId: string;
   const handleDelete = async () => {
     setIsDeleting(true)
     try {
-      await deleteUserProfile(userId)
+      const result = await deleteUserProfile(userId)
+      if ((result as any)?.error) {
+        alert('Error: ' + (result as any).error)
+        return
+      }
     } catch (err: any) {
       alert('Error: ' + err.message)
     } finally {

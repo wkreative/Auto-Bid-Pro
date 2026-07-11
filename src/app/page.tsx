@@ -132,8 +132,8 @@ export default function Home() {
             </div>
             <div className="relative h-[600px] w-full rounded-2xl overflow-hidden glass p-2">
                <img 
-                src="https://images.unsplash.com/photo-1560179707-f14e90ef3623?q=80&w=2940&auto=format&fit=crop" 
-                alt="Dashboard Preview" 
+                src="https://images.unsplash.com/photo-1555215695-3004980ad54e?q=80&w=2940&auto=format&fit=crop" 
+                alt="BMW Dashboard Preview" 
                 className="w-full h-full object-cover rounded-xl opacity-80"
               />
               <div className="absolute inset-0 bg-gradient-to-tr from-[#050505]/80 to-transparent"></div>

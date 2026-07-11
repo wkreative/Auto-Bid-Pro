@@ -34,15 +34,20 @@ export default function UserFormModal({
     try {
       const form = e.currentTarget
       const data = new FormData(form)
+      let result
       if (user) {
         data.append('user_id', user.id)
-        await updateUserProfile(data)
+        result = await updateUserProfile(data)
       } else {
-        await createUser(data)
+        result = await createUser(data)
+      }
+      if ((result as any)?.error) {
+        setError((result as any).error)
+        return
       }
       onClose()
     } catch (err: any) {
-      setError(err.message)
+      setError(err.message || 'Error inesperado')
     } finally {
       setSubmitting(false)
     }
