@@ -154,7 +154,7 @@ export default function VehicleForm({ vehicle }: VehicleFormProps) {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2">VIN *</label>
-              <input name="vin" required defaultValue={vehicle?.vin || ''} disabled={isEdit} type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-primary focus:outline-none disabled:opacity-50" placeholder="17 caracteres" />
+              <input name="vin" required defaultValue={vehicle?.vin || ''} readOnly={isEdit} type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-primary focus:outline-none read-only:opacity-50 read-only:cursor-not-allowed" placeholder="17 caracteres" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2">Millaje *</label>
