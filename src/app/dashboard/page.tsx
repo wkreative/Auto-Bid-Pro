@@ -11,6 +11,7 @@ export default async function DashboardPage({ searchParams }: Props) {
   const params = await searchParams;
   const q = typeof params.q === 'string' ? params.q : '';
   const filter = typeof params.filter === 'string' ? params.filter : 'Todos';
+  const saleType = typeof params.sale_type === 'string' ? params.sale_type : '';
 
   const supabase = await createClient();
   let query = supabase
@@ -18,20 +19,18 @@ export default async function DashboardPage({ searchParams }: Props) {
     .select('*, vehicle_images(url, is_primary)')
     .eq('status', 'published');
 
-  // Aplicar Búsqueda
   if (q) {
     query = query.or(`brand.ilike.%${q}%,model.ilike.%${q}%,vin.ilike.%${q}%`);
   }
 
-  // Aplicar Filtros Rápidos
   if (filter !== 'Todos') {
-    if (filter === 'Riesgo Bajo') {
-      query = query.eq('risk_level', 'low');
-    } else if (filter === 'Riesgo Medio') {
-      query = query.eq('risk_level', 'medium');
-    } else if (filter === 'Riesgo Alto') {
-      query = query.eq('risk_level', 'high');
-    }
+    if (filter === 'Riesgo Bajo') query = query.eq('risk_level', 'low');
+    else if (filter === 'Riesgo Medio') query = query.eq('risk_level', 'medium');
+    else if (filter === 'Riesgo Alto') query = query.eq('risk_level', 'high');
+  }
+
+  if (saleType === 'direct_sale' || saleType === 'auction') {
+    query = query.eq('sale_type', saleType);
   }
 
   query = query.order('created_at', { ascending: false });
@@ -55,24 +54,50 @@ export default async function DashboardPage({ searchParams }: Props) {
             className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary transition-colors"
           />
           {filter !== 'Todos' && <input type="hidden" name="filter" value={filter} />}
+          {saleType && <input type="hidden" name="sale_type" value={saleType} />}
         </form>
       </div>
       
-      {/* Quick Filters */}
-      <div className="flex flex-wrap gap-2 mb-8">
-        {['Todos', 'Riesgo Bajo', 'Riesgo Medio', 'Riesgo Alto'].map((f, idx) => {
+      {/* Risk Filters */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {['Todos', 'Riesgo Bajo', 'Riesgo Medio', 'Riesgo Alto'].map((f) => {
           const linkParams = new URLSearchParams();
           if (q) linkParams.set('q', q);
+          if (saleType) linkParams.set('sale_type', saleType);
           if (f !== 'Todos') linkParams.set('filter', f);
           return (
           <Link 
             href={`/dashboard${linkParams.toString() ? '?' + linkParams.toString() : ''}`}
-            key={idx}
+            key={f}
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
               filter === f ? 'bg-primary text-white' : 'glass text-gray-300 hover:text-white hover:border-primary/50'
             }`}
           >
             {f}
+          </Link>
+        )})}
+      </div>
+
+      {/* Sale Type Filters */}
+      <div className="flex flex-wrap gap-2 mb-8">
+        {[
+          { label: 'Todos', value: '' },
+          { label: 'Subasta', value: 'auction' },
+          { label: 'Venta Directa', value: 'direct_sale' },
+        ].map(({ label, value }) => {
+          const linkParams = new URLSearchParams();
+          if (q) linkParams.set('q', q);
+          if (filter !== 'Todos') linkParams.set('filter', filter);
+          if (value) linkParams.set('sale_type', value);
+          return (
+          <Link 
+            href={`/dashboard${linkParams.toString() ? '?' + linkParams.toString() : ''}`}
+            key={value}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              saleType === value || (!saleType && !value) ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'glass text-gray-300 hover:text-white hover:border-primary/50'
+            }`}
+          >
+            {label}
           </Link>
         )})}
       </div>
@@ -99,7 +124,12 @@ export default async function DashboardPage({ searchParams }: Props) {
               <div className="absolute top-0 left-0 p-3">
                 <FavoriteButton vehicleId={vehicle.id} />
               </div>
-              <div className="absolute top-4 right-4">
+              <div className="absolute top-4 right-4 flex flex-col gap-2">
+                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md ${
+                  vehicle.sale_type === 'direct_sale' ? 'bg-green-500/80 text-white' : 'bg-blue-500/80 text-white'
+                }`}>
+                  {vehicle.sale_type === 'direct_sale' ? 'Venta Directa' : 'Subasta'}
+                </span>
                 <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md ${
                   vehicle.risk_level === 'low' ? 'bg-green-500/80 text-white' : 
                   vehicle.risk_level === 'medium' ? 'bg-yellow-500/80 text-white' : 
@@ -128,17 +158,23 @@ export default async function DashboardPage({ searchParams }: Props) {
               
               <div className="bg-white/5 rounded-xl p-4 mb-4">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-400">Oferta Inicial</span>
-                  <span className="font-bold text-lg">${vehicle.starting_price?.toLocaleString()}</span>
+                  <span className="text-sm text-gray-400">{vehicle.sale_type === 'direct_sale' ? 'Precio de Venta' : 'Oferta Inicial'}</span>
+                  <span className="font-bold text-lg">${(vehicle.direct_sale_price || vehicle.starting_price)?.toLocaleString()}</span>
                 </div>
+                {vehicle.estimated_resale_value && (
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-primary">Valor Est. Reventa</span>
-                  <span className="font-bold text-green-400">${vehicle.estimated_resale_value?.toLocaleString() || '---'}</span>
+                  <span className="font-bold text-green-400">${vehicle.estimated_resale_value?.toLocaleString()}</span>
                 </div>
+                )}
               </div>
               
-              <div className="w-full bg-primary/10 hover:bg-primary text-primary hover:text-white text-center py-3 rounded-xl font-bold transition-colors">
-                Ver Detalles y Ofertar
+              <div className={`w-full text-center py-3 rounded-xl font-bold transition-colors ${
+                vehicle.sale_type === 'direct_sale' 
+                  ? 'bg-green-500/20 text-green-400 hover:bg-green-500 hover:text-white' 
+                  : 'bg-primary/10 text-primary hover:bg-primary hover:text-white'
+              }`}>
+                {vehicle.sale_type === 'direct_sale' ? 'Comprar Ahora' : 'Ver Detalles y Ofertar'}
               </div>
             </div>
           </Link>

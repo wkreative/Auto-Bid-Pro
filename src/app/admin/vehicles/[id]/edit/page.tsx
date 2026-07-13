@@ -10,7 +10,7 @@ export default async function EditVehiclePage({ params }: Props) {
 
   const { data: vehicle } = await supabase
     .from('vehicles')
-    .select('*')
+    .select('*, vehicle_images(*), vehicle_videos(*)')
     .eq('id', id)
     .single();
 
