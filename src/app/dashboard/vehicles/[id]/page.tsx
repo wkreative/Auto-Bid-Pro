@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { MapPin, Gauge, Shield, Zap, Info, ChevronLeft, Calendar, FileText, CreditCard, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import MediaCarousel from '@/components/MediaCarousel';
+import FavoriteButton from '@/components/FavoriteButton';
 import { placeBid } from './actions';
 
 export default async function VehicleDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -37,7 +38,8 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
             <MediaCarousel items={mediaItems} />
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
+            <FavoriteButton vehicleId={vehicle.id} />
             {vehicle.risk_level && (
               <span className={`px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider backdrop-blur-md ${
                 vehicle.risk_level === 'low' ? 'bg-green-500/20 text-green-400' :

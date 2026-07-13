@@ -25,9 +25,8 @@ export default function DashboardLayout({
       {/* Sidebar */}
       <aside className="w-64 glass border-r border-white/5 hidden md:flex flex-col sticky top-0 h-screen">
         <div className="h-20 flex items-center px-6 border-b border-white/5">
-          <Link href="/" className="flex items-center gap-2">
-            <img src="/logo.png" alt="Auto Bid Pro Logo" className="h-8 w-auto" />
-            <span className="font-bold text-lg text-white">Auto Bid Pro</span>
+          <Link href="/">
+            <img src="/logo.png" alt="Auto Bid Pro" className="h-8 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
           </Link>
         </div>
         
@@ -64,10 +63,8 @@ export default function DashboardLayout({
         {/* Top Header */}
         <header className="h-20 glass border-b border-white/5 flex items-center justify-between px-8 sticky top-0 z-30">
           <div className="md:hidden flex items-center gap-2">
-            <img src="/logo.png" alt="Auto Bid Pro Logo" className="h-8 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
-            <span className="font-bold text-lg text-white">Auto Bid Pro</span>
+            <img src="/logo.png" alt="Auto Bid Pro" className="h-8 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
           </div>
-          
           <div className="hidden md:flex flex-1 max-w-xl">
             <Suspense fallback={<div className="h-10 w-full bg-white/5 animate-pulse rounded-full"></div>}>
               <DashboardSearch />

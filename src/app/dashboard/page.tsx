@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Search, MapPin, Gauge, Car } from 'lucide-react';
 import { createClient } from '@/utils/supabase/server';
+import FavoriteButton from '@/components/FavoriteButton';
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -95,7 +96,10 @@ export default async function DashboardPage({ searchParams }: Props) {
                 alt={`${vehicle.brand} ${vehicle.model}`} 
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
-              <div className="absolute top-4 right-4 flex flex-col gap-2">
+              <div className="absolute top-0 left-0 p-3">
+                <FavoriteButton vehicleId={vehicle.id} />
+              </div>
+              <div className="absolute top-4 right-4">
                 <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md ${
                   vehicle.risk_level === 'low' ? 'bg-green-500/80 text-white' : 
                   vehicle.risk_level === 'medium' ? 'bg-yellow-500/80 text-white' : 

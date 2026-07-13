@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Upload, Save, X, Loader2 } from 'lucide-react';
+import { Upload, Save, X, Loader2, Trash2, Play } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 
@@ -16,9 +16,13 @@ export default function VehicleForm({ vehicle }: VehicleFormProps) {
   const [videoFiles, setVideoFiles] = useState<File[]>([]);
   const [uploadErrors, setUploadErrors] = useState<string[]>([]);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [deletingMedia, setDeletingMedia] = useState<string | null>(null);
   const [saleType, setSaleType] = useState(vehicle?.sale_type || 'auction');
   const router = useRouter();
   const supabase = createClient();
+
+  const existingImages: { id: string; url: string }[] = vehicle?.vehicle_images || [];
+  const existingVideos: { id: string; url: string }[] = vehicle?.vehicle_videos || [];
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -34,6 +38,15 @@ export default function VehicleForm({ vehicle }: VehicleFormProps) {
       setUploadErrors([]);
       setUploadSuccess(false);
     }
+  };
+
+  const deleteExistingMedia = async (type: 'vehicle_images' | 'vehicle_videos', mediaId: string, url: string) => {
+    setDeletingMedia(mediaId);
+    const path = url.split('/vehicle_media/')[1];
+    if (path) await supabase.storage.from('vehicle_media').remove([path]);
+    await supabase.from(type).delete().eq('id', mediaId);
+    setDeletingMedia(null);
+    router.refresh();
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -232,7 +245,49 @@ export default function VehicleForm({ vehicle }: VehicleFormProps) {
 
         <div className="glass p-8 rounded-2xl border border-white/5">
           <h2 className="text-xl font-bold mb-6">Imágenes y Videos</h2>
-          <p className="text-sm text-gray-400 mb-4">Puedes agregar más imágenes o videos incluso después de crear el vehículo.</p>
+
+          {isEdit && existingImages.length === 0 && existingVideos.length === 0 && (
+            <p className="text-sm text-gray-400 mb-4">Este vehículo no tiene imágenes ni videos todavía.</p>
+          )}
+
+          {isEdit && (existingImages.length > 0 || existingVideos.length > 0) && (
+            <div className="mb-6">
+              <p className="text-sm font-medium text-gray-300 mb-3">Archivos actuales:</p>
+              <div className="flex flex-wrap gap-3">
+                {existingImages.map((img) => (
+                  <div key={img.id} className="relative group h-24 w-32 flex-shrink-0 rounded-xl overflow-hidden border border-white/10">
+                    <img src={img.url} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => deleteExistingMedia('vehicle_images', img.id, img.url)}
+                      disabled={deletingMedia === img.id}
+                      className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      {deletingMedia === img.id ? <Loader2 className="h-5 w-5 animate-spin text-red-400" /> : <Trash2 className="h-5 w-5 text-red-400" />}
+                    </button>
+                  </div>
+                ))}
+                {existingVideos.map((vid) => (
+                  <div key={vid.id} className="relative group h-24 w-32 flex-shrink-0 rounded-xl overflow-hidden border border-white/10">
+                    <video src={vid.url} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                      <Play className="h-6 w-6 text-white" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => deleteExistingMedia('vehicle_videos', vid.id, vid.url)}
+                      disabled={deletingMedia === vid.id}
+                      className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      {deletingMedia === vid.id ? <Loader2 className="h-5 w-5 animate-spin text-red-400" /> : <Trash2 className="h-5 w-5 text-red-400" />}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <p className="text-sm text-gray-400 mb-4">Agrega nuevas imágenes o videos al vehículo.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="border-2 border-dashed border-white/10 rounded-2xl p-8 text-center hover:border-primary/50 transition-colors bg-white/5 relative">
               <input type="file" multiple accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
@@ -241,7 +296,7 @@ export default function VehicleForm({ vehicle }: VehicleFormProps) {
               <p className="text-sm text-gray-500 mt-2">{imageFiles.length} seleccionados</p>
             </div>
             <div className="border-2 border-dashed border-white/10 rounded-2xl p-8 text-center hover:border-primary/50 transition-colors bg-white/5 relative">
-              <input type="file" multiple accept="video/*" onChange={handleVideoChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+              <input type="file" multiple accept="video/mp4,video/webm,video/ogg" onChange={handleVideoChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
               <Upload className="h-10 w-10 text-gray-400 mx-auto mb-3" />
               <p className="text-gray-300 font-medium">Videos</p>
               <p className="text-sm text-gray-500 mt-2">{videoFiles.length} seleccionados</p>
