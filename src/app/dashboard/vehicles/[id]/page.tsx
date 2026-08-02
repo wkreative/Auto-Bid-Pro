@@ -4,6 +4,7 @@ import { MapPin, Gauge, Shield, Zap, Info, ChevronLeft, Calendar, FileText, Cred
 import Link from 'next/link';
 import MediaCarousel from '@/components/MediaCarousel';
 import FavoriteButton from '@/components/FavoriteButton';
+import ResaleCalculator from '@/components/ResaleCalculator';
 import { placeBid } from './actions';
 
 export default async function VehicleDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -136,6 +137,12 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                     </div>
                   )}
                 </div>
+
+                <ResaleCalculator
+                  startingPrice={vehicle.starting_price || 0}
+                  estimatedResaleValue={vehicle.estimated_resale_value}
+                  estimatedRepairCost={vehicle.estimated_repair_cost}
+                />
 
                 <div className="border-t border-white/10 pt-6">
                   <h3 className="font-bold mb-4">Colocar Oferta</h3>

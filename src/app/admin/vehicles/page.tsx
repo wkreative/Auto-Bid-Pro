@@ -1,15 +1,23 @@
 import { createClient } from '@/utils/supabase/server';
 import Link from 'next/link';
-import { Plus, Eye, Edit } from 'lucide-react';
+import { Plus, Eye, Edit, Search } from 'lucide-react';
 import DeleteVehicleButton from '@/components/admin/DeleteVehicleButton';
 
-export default async function AdminVehiclesPage() {
+export default async function AdminVehiclesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const resolvedParams = await searchParams;
+  const query = resolvedParams.q?.toString().trim() || '';
   const supabase = await createClient();
 
-  const { data: vehicles } = await supabase
+  let vehiclesQuery = supabase
     .from('vehicles')
     .select('*, vehicle_images(url, is_primary)')
     .order('created_at', { ascending: false });
+
+  if (query) {
+    vehiclesQuery = vehiclesQuery.or(`brand.ilike.%${query}%,model.ilike.%${query}%,vin.ilike.%${query}%,year.eq.${isNaN(Number(query)) ? -1 : query},location.ilike.%${query}%`);
+  }
+
+  const { data: vehicles } = await vehiclesQuery;
 
   return (
     <div>
@@ -24,6 +32,19 @@ export default async function AdminVehiclesPage() {
         >
           <Plus className="h-5 w-5" /> Añadir Vehículo
         </Link>
+      </div>
+
+      <div className="glass p-4 rounded-2xl border border-white/5 mb-6">
+        <form className="relative max-w-md" action="">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+          <input 
+            name="q"
+            type="text" 
+            defaultValue={query}
+            placeholder="Buscar por marca, modelo, VIN, año o ubicación..." 
+            className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-white focus:outline-none focus:border-primary/50 transition-colors"
+          />
+        </form>
       </div>
 
       <div className="glass rounded-3xl overflow-hidden border border-white/5">
