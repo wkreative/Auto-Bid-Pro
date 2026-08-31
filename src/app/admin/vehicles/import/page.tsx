@@ -12,8 +12,9 @@ function parseCSVLine(line: string): string[] {
   cols.push(cur.trim()); return cols.map(c => c.replace(/^"|"$/g, '').trim());
 }
 function parseCSV(text: string): ParsedVehicle[] {
+  text = text.replace(/^\uFEFF/, '');
   const lines = text.split(/\r?\n/).filter(l => l.trim()); if (lines.length < 2) return [];
-  const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase());
+  const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim());
   const idx = (n: string) => headers.findIndex(h => h.includes(n));
   const iYear = idx('year'), iMake = idx('make') !== -1 ? idx('make') : idx('brand'), iModel = idx('model'), iVin = idx('vin'), iOdo = idx('odo') !== -1 ? idx('odo') : idx('mile'), iLoc = headers.findIndex(h => h.includes('pickup location')) !== -1 ? headers.findIndex(h => h.includes('pickup location')) : idx('location'), iPrice = idx('mmr') !== -1 ? idx('mmr') : idx('price'), iTrim = idx('trim'), iColor = headers.findIndex(h => h.includes('exterior color'));
   return lines.slice(1).map(l => { const c = parseCSVLine(l); return { brand: c[iMake] || 'N/A', model: c[iModel] || 'N/A', year: parseInt(c[iYear]) || 2020, vin: (c[iVin] || '').toUpperCase().slice(0, 17), mileage: parseInt((c[iOdo] || '0').replace(/[^0-9]/g, '')) || 0, location: c[iLoc] || 'Puerto Rico - Manheim Caribbean', starting_price: parseFloat((c[iPrice] || '1000').replace(/[^0-9.]/g, '')) || 1000, images: [], trim: c[iTrim], exterior_color: c[iColor] }; }).filter(v => v.vin.length >= 5);
@@ -28,7 +29,7 @@ export default function ImportPage() {
   const supabase = createClient();
 
   const handleCsv = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0]; if (!f) return; const t = await f.text(); const p = parseCSV(t); setCsvVehicles(p); if (imagesMap) merge(p, imagesMap); else setMerged(p); setResult(null);
+    const f = e.target.files?.[0]; if (!f) return; const t = await f.text(); const p = parseCSV(t); if (p.length === 0) alert('CSV sin vehículos detectados. Asegúrate de subir Export.csv de Manheim (debe tener columnas Vin, Year, Make). Primer línea: ' + t.split('\n')[0].slice(0, 120)); setCsvVehicles(p); if (imagesMap) merge(p, imagesMap); else setMerged(p); setResult(null);
   };
   const handleImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; if (!f) return; const t = await f.text();
