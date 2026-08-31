@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Car, LayoutDashboard, Users, PlusCircle, Settings, LogOut, FileText } from 'lucide-react';
+import { Car, LayoutDashboard, Users, PlusCircle, Settings, LogOut, FileText, Upload } from 'lucide-react';
 
 export default function AdminLayout({
   children,
@@ -16,6 +16,7 @@ export default function AdminLayout({
     { name: 'Ofertas', href: '/admin/bids', icon: <FileText className="h-5 w-5" /> },
     { name: 'Usuarios', href: '/admin/users', icon: <Users className="h-5 w-5" /> },
     { name: 'Añadir Vehículo', href: '/admin/vehicles/new', icon: <PlusCircle className="h-5 w-5" /> },
+    { name: 'Subir Múltiples Vehículos', href: '/admin/vehicles/import', icon: <Upload className="h-5 w-5" /> },
     { name: 'Configuración', href: '/admin/settings', icon: <Settings className="h-5 w-5" /> },
   ];
 
