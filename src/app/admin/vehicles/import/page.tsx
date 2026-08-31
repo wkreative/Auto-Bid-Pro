@@ -35,15 +35,25 @@ function parseManheimJson(raw: any): ParsedVehicle[] {
   }).filter(v => v.vin && v.brand !== 'N/A');
 }
 
+function parseCSVLine(line: string): string[] {
+  const cols: string[] = []; let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { if (inQ && line[i + 1] === '"') { cur += '"'; i++; } else inQ = !inQ; }
+    else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+    else cur += c;
+  }
+  cols.push(cur.trim()); return cols.map(c => c.replace(/^"|"$/g, '').trim());
+}
 function parseCSV(text: string): ParsedVehicle[] {
-  const lines = text.split(/\r?\n/).filter(Boolean);
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
   if (lines.length < 2) return [];
-  const headers = lines[0].split(/,|;|\t/).map(h => h.trim().toLowerCase().replace(/"/g, ''));
+  const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase());
   const idx = (name: string) => headers.findIndex(h => h.includes(name));
-  const iYear = idx('year'), iMake = idx('make') !== -1 ? idx('make') : idx('brand'), iModel = idx('model'), iVin = idx('vin'), iOdo = idx('odo') !== -1 ? idx('odo') : idx('mile'), iLoc = idx('location'), iPrice = idx('price') !== -1 ? idx('price') : idx('mmr');
+  const iYear = idx('year'), iMake = idx('make') !== -1 ? idx('make') : idx('brand'), iModel = idx('model'), iVin = idx('vin'), iOdo = idx('odo') !== -1 ? idx('odo') : idx('mile'), iLoc = headers.findIndex(h => h.includes('pickup location')) !== -1 ? headers.findIndex(h => h.includes('pickup location')) : idx('location'), iPrice = idx('mmr') !== -1 ? idx('mmr') : idx('price'), iTrim = idx('trim'), iColor = headers.findIndex(h => h.includes('exterior color')), iEngine = idx('engine'), iTrans = idx('transmission'), iGrade = idx('grade');
   return lines.slice(1).map(l => {
-    const cols = l.split(/,|;|\t/).map(c => c.replace(/^"|"$/g, '').trim());
-    return { brand: cols[iMake] || 'N/A', model: cols[iModel] || 'N/A', year: parseInt(cols[iYear]) || 2020, vin: (cols[iVin] || '').toUpperCase().slice(0, 17) || `NOVIN-${Math.random().toString(36).slice(2, 6)}`, mileage: parseInt((cols[iOdo] || '0').replace(/[^0-9]/g, '')) || 0, location: cols[iLoc] || 'Puerto Rico', starting_price: parseFloat((cols[iPrice] || '1000').replace(/[^0-9.]/g, '')) || 1000, images: [] };
+    const cols = parseCSVLine(l);
+    return { brand: cols[iMake] || 'N/A', model: cols[iModel] || 'N/A', year: parseInt(cols[iYear]) || 2020, vin: (cols[iVin] || '').toUpperCase().slice(0, 17) || `NOVIN-${Math.random().toString(36).slice(2, 6)}`, mileage: parseInt((cols[iOdo] || '0').replace(/[^0-9]/g, '')) || 0, location: cols[iLoc] || 'Puerto Rico - Manheim Caribbean', starting_price: parseFloat((cols[iPrice] || '1000').replace(/[^0-9.]/g, '')) || 1000, images: [], _trim: cols[iTrim], _color: cols[iColor], _engine: cols[iEngine], _trans: cols[iTrans], _grade: cols[iGrade] } as any;
   }).filter(v => v.vin.length >= 5);
 }
 
