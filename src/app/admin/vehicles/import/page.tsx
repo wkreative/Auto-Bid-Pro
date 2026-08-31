@@ -1,109 +1,67 @@
 'use client';
 import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Upload, FileJson, Loader2, Check, Filter } from 'lucide-react';
+import { Upload, Loader2, Check } from 'lucide-react';
 import Link from 'next/link';
 
-type ParsedVehicle = {
-  brand: string; model: string; year: number; vin: string; mileage: number; location: string; starting_price?: number; images: string[];
-};
-
-function parseManheimJson(raw: any): ParsedVehicle[] {
-  let list: any[] = [];
-  if (Array.isArray(raw)) list = raw;
-  else if (raw.vehicles) list = raw.vehicles;
-  else if (raw.data) list = Array.isArray(raw.data) ? raw.data : [raw.data];
-  else if (raw.results) list = raw.results;
-  else if (raw.listings) list = raw.listings;
-  else if (raw.inventory) list = raw.inventory;
-  else list = [raw];
-  if (list.length === 1 && typeof list[0] === 'object' && !list[0].vin && !list[0].make) {
-    const vals = Object.values(list[0]);
-    for (const v of vals as any[]) if (Array.isArray(v) && v.length && typeof v[0] === 'object') { list = v; break; }
-  }
-  return list.map((v: any) => {
-    const get = (...keys: string[]) => { for (const k of keys) { const p = k.split('.'); let c: any = v; for (const x of p) c = c?.[x]; if (c != null && c !== '') return c; } return null; };
-    const brand = get('make', 'brand', 'Make') || 'N/A';
-    const model = get('model', 'Model') || 'N/A';
-    const year = parseInt(get('year', 'Year') || '0');
-    const vin = get('vin', 'VIN', 'vinNumber') || `NOVIN-${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
-    const mileage = parseInt(String(get('odometer', 'mileage', 'miles') || '0').replace(/[^0-9]/g, '') || '0');
-    const location = get('saleLocation', 'location', 'Location') || 'Puerto Rico';
-    const price = parseFloat(String(get('mmr', 'price', 'currentBid') || '').replace(/[^0-9.]/g, '')) || 1000;
-    const images: string[] = get('images', 'imageUrls', 'photos') || (get('image') ? [get('image')] : []);
-    return { brand: String(brand).trim(), model: String(model).trim(), year: year || 2020, vin: String(vin).trim().toUpperCase().slice(0, 17), mileage, location: String(location), starting_price: price, images: images.flat().filter(Boolean).map(String).slice(0, 10) };
-  }).filter(v => v.vin && v.brand !== 'N/A');
-}
+type ParsedVehicle = { brand: string; model: string; year: number; vin: string; mileage: number; location: string; starting_price?: number; images: string[]; trim?: string; exterior_color?: string; };
 
 function parseCSVLine(line: string): string[] {
   const cols: string[] = []; let cur = '', inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (c === '"') { if (inQ && line[i + 1] === '"') { cur += '"'; i++; } else inQ = !inQ; }
-    else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
-    else cur += c;
-  }
+  for (let i = 0; i < line.length; i++) { const c = line[i]; if (c === '"') { if (inQ && line[i + 1] === '"') { cur += '"'; i++; } else inQ = !inQ; } else if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; } else cur += c; }
   cols.push(cur.trim()); return cols.map(c => c.replace(/^"|"$/g, '').trim());
 }
 function parseCSV(text: string): ParsedVehicle[] {
-  const lines = text.split(/\r?\n/).filter(l => l.trim());
-  if (lines.length < 2) return [];
+  const lines = text.split(/\r?\n/).filter(l => l.trim()); if (lines.length < 2) return [];
   const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase());
-  const idx = (name: string) => headers.findIndex(h => h.includes(name));
-  const iYear = idx('year'), iMake = idx('make') !== -1 ? idx('make') : idx('brand'), iModel = idx('model'), iVin = idx('vin'), iOdo = idx('odo') !== -1 ? idx('odo') : idx('mile'), iLoc = headers.findIndex(h => h.includes('pickup location')) !== -1 ? headers.findIndex(h => h.includes('pickup location')) : idx('location'), iPrice = idx('mmr') !== -1 ? idx('mmr') : idx('price'), iTrim = idx('trim'), iColor = headers.findIndex(h => h.includes('exterior color')), iEngine = idx('engine'), iTrans = idx('transmission'), iGrade = idx('grade');
-  return lines.slice(1).map(l => {
-    const cols = parseCSVLine(l);
-    return { brand: cols[iMake] || 'N/A', model: cols[iModel] || 'N/A', year: parseInt(cols[iYear]) || 2020, vin: (cols[iVin] || '').toUpperCase().slice(0, 17) || `NOVIN-${Math.random().toString(36).slice(2, 6)}`, mileage: parseInt((cols[iOdo] || '0').replace(/[^0-9]/g, '')) || 0, location: cols[iLoc] || 'Puerto Rico - Manheim Caribbean', starting_price: parseFloat((cols[iPrice] || '1000').replace(/[^0-9.]/g, '')) || 1000, images: [], _trim: cols[iTrim], _color: cols[iColor], _engine: cols[iEngine], _trans: cols[iTrans], _grade: cols[iGrade] } as any;
-  }).filter(v => v.vin.length >= 5);
-}
-
-function parseHTML(html: string): ParsedVehicle[] {
-  const doc = new DOMParser().parseFromString(html, 'text/html');
-  const cards = [...doc.querySelectorAll('*')].filter(el => el.textContent?.match(/\b[A-HJ-NPR-Z0-9]{17}\b/)).slice(0, 50);
-  const vins = [...html.matchAll(/\b[A-HJ-NPR-Z0-9]{17}\b/g)].map(m => m[0]);
-  const uniq = [...new Set(vins)].slice(0, 50);
-  return uniq.map(vin => {
-    const snippet = html.substring(html.indexOf(vin) - 800, html.indexOf(vin) + 800);
-    const year = snippet.match(/\b(19|20)\d{2}\b/)?.[0] || '2020';
-    const make = snippet.match(/(Toyota|Ford|Honda|Chevrolet|Nissan|BMW|Mercedes|Jeep|Lexus|Hyundai|Kia|Mazda|Subaru|Audi|Volkswagen|Dodge|Ram|GMC|Cadillac|Acura|Infiniti|Buick|Chrysler|Lincoln|Tesla)/i)?.[0] || 'N/A';
-    const imgs = [...snippet.matchAll(/https:\/\/[^"']+\.(jpg|png|webp)/gi)].map(m => m[0]).slice(0, 5);
-    return { brand: make, model: 'N/A', year: parseInt(year), vin, mileage: 0, location: 'Puerto Rico', starting_price: 1000, images: imgs };
-  }).filter(v => v.brand !== 'N/A');
+  const idx = (n: string) => headers.findIndex(h => h.includes(n));
+  const iYear = idx('year'), iMake = idx('make') !== -1 ? idx('make') : idx('brand'), iModel = idx('model'), iVin = idx('vin'), iOdo = idx('odo') !== -1 ? idx('odo') : idx('mile'), iLoc = headers.findIndex(h => h.includes('pickup location')) !== -1 ? headers.findIndex(h => h.includes('pickup location')) : idx('location'), iPrice = idx('mmr') !== -1 ? idx('mmr') : idx('price'), iTrim = idx('trim'), iColor = headers.findIndex(h => h.includes('exterior color'));
+  return lines.slice(1).map(l => { const c = parseCSVLine(l); return { brand: c[iMake] || 'N/A', model: c[iModel] || 'N/A', year: parseInt(c[iYear]) || 2020, vin: (c[iVin] || '').toUpperCase().slice(0, 17), mileage: parseInt((c[iOdo] || '0').replace(/[^0-9]/g, '')) || 0, location: c[iLoc] || 'Puerto Rico - Manheim Caribbean', starting_price: parseFloat((c[iPrice] || '1000').replace(/[^0-9.]/g, '')) || 1000, images: [], trim: c[iTrim], exterior_color: c[iColor] }; }).filter(v => v.vin.length >= 5);
 }
 
 export default function ImportPage() {
-  const [vehicles, setVehicles] = useState<ParsedVehicle[]>([]);
-  const [filterPR, setFilterPR] = useState(true);
+  const [csvVehicles, setCsvVehicles] = useState<ParsedVehicle[] | null>(null);
+  const [imagesMap, setImagesMap] = useState<Map<string, string[]> | null>(null);
+  const [merged, setMerged] = useState<ParsedVehicle[]>([]);
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<{ ok: number; fail: number; errs: string[] } | null>(null);
   const supabase = createClient();
 
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file) return;
-    const text = await file.text();
-    const ext = file.name.split('.').pop()?.toLowerCase();
-    let parsed: ParsedVehicle[] = [];
-    if (ext === 'csv' || text.startsWith('Year') || text.includes(',') && text.split('\n')[0].includes('VIN')) parsed = parseCSV(text);
-    else if (ext === 'html' || text.includes('<html')) parsed = parseHTML(text);
-    else try { parsed = parseManheimJson(JSON.parse(text)); } catch { alert('Archivo no reconocido. Usa .json, .csv o .html guardado de Manheim'); return; }
-    setVehicles(parsed); setResult(null);
+  const handleCsv = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]; if (!f) return; const t = await f.text(); const p = parseCSV(t); setCsvVehicles(p); if (imagesMap) merge(p, imagesMap); else setMerged(p); setResult(null);
   };
-
-  const filtered = filterPR ? vehicles : vehicles;
+  const handleImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]; if (!f) return; const t = await f.text();
+    try {
+      const arr: { vin: string; image: string }[] = JSON.parse(t);
+      const map = new Map<string, string[]>();
+      for (const { vin, image } of arr) {
+        if (!image.includes('images.cdn.manheim.com')) continue;
+        if (!map.has(vin)) map.set(vin, []);
+        if (!map.get(vin)!.includes(image)) map.get(vin)!.push(image);
+      }
+      setImagesMap(map);
+      if (csvVehicles) merge(csvVehicles, map);
+      else setMerged([]); 
+      setResult(null);
+    } catch { alert('JSON de fotos inválido'); }
+  };
+  const merge = (csv: ParsedVehicle[], map: Map<string, string[]>) => {
+    const m = csv.map(v => ({ ...v, images: (map.get(v.vin) || []).slice(0, 8) }));
+    setMerged(m);
+  };
+  const vehicles = csvVehicles ? merged : [];
 
   const handleImport = async () => {
     setImporting(true); setResult(null); let ok = 0, fail = 0; const errs: string[] = [];
-    for (const v of filtered) {
+    for (const v of vehicles) {
       try {
-        const { data: inserted, error } = await supabase.from('vehicles').insert([{
-          brand: v.brand, model: v.model, year: v.year, vin: v.vin, mileage: v.mileage,
-          location: v.location.includes('Puerto') ? v.location : 'Puerto Rico', sale_type: 'auction', starting_price: v.starting_price, status: 'published', risk_level: 'low', description: `Importado Manheim - ${v.year} ${v.brand} ${v.model}`,
-        }]).select().single();
+        const { data: ins, error } = await supabase.from('vehicles').insert([{ brand: v.brand, model: v.model + (v.trim ? ' ' + v.trim : ''), year: v.year, vin: v.vin, mileage: v.mileage, location: v.location, sale_type: 'auction', starting_price: v.starting_price, status: 'published', risk_level: 'low', exterior_color: v.exterior_color, description: `Importado Manheim PR - ${v.year} ${v.brand} ${v.model} ${v.trim || ''}`.trim() }]).select().single();
         if (error) throw error; ok++;
         for (let i = 0; i < v.images.length; i++) {
           let finalUrl = v.images[i];
-          try { const r = await fetch(v.images[i]); if (r.ok) { const b = await r.blob(); const path = `${inserted.id}/images/${Math.random().toString(36).slice(2)}.jpg`; const { error: upErr } = await supabase.storage.from('vehicle_media').upload(path, b); if (!upErr) { const { data } = supabase.storage.from('vehicle_media').getPublicUrl(path); finalUrl = data.publicUrl; } } } catch {}
-          await supabase.from('vehicle_images').insert([{ vehicle_id: inserted.id, url: finalUrl, is_primary: i === 0 }]);
+          try { const r = await fetch(v.images[i]); if (r.ok) { const b = await r.blob(); const path = `${ins.id}/images/${Math.random().toString(36).slice(2)}.jpg`; const { error: upErr } = await supabase.storage.from('vehicle_media').upload(path, b); if (!upErr) { const { data } = supabase.storage.from('vehicle_media').getPublicUrl(path); finalUrl = data.publicUrl; } } } catch {}
+          await supabase.from('vehicle_images').insert([{ vehicle_id: ins.id, url: finalUrl, is_primary: i === 0 }]);
         }
       } catch (e: any) { fail++; errs.push(`${v.vin}: ${e.message?.includes('vehicles_vin_key') ? 'VIN duplicado' : e.message}`); }
     }
@@ -113,44 +71,39 @@ export default function ImportPage() {
   return (
     <div className="max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold">Importar Manheim → Auto Bid Pro</h1>
-      <p className="text-gray-400 mb-6">La forma más fácil (sin código). Solo 3 pasos.</p>
+      <p className="text-gray-400 mb-6">Solo para inventario Puerto Rico. 2 archivos = con fotos.</p>
 
-      <div className="glass p-8 rounded-2xl border border-white/5 mb-6">
-        <h2 className="font-bold text-lg mb-4">✅ Pasos súper fáciles:</h2>
-        <div className="space-y-4">
-          <div className="flex gap-4"><span className="bg-primary text-white h-8 w-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">1</span><div><p className="font-bold">Entra a Manheim con tu código SMS</p><p className="text-sm text-gray-400">Abre tu búsqueda: <span className="bg-white/10 px-2 py-0.5 rounded text-xs">search.manheim.com → tu búsqueda 0044d011... → filtra Puerto Rico</span></p></div></div>
-          <div className="flex gap-4"><span className="bg-primary text-white h-8 w-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">2</span><div><p className="font-bold">Guarda la página</p><p className="text-sm text-gray-400">Presiona <b className="text-white">Ctrl + S</b> (o Cmd+S en Mac) → Guarda como <b className="text-white">Página completa .html</b> <br /> <span className="text-xs">O si ves botón <b>Export / Export to Excel</b> en Manheim, descarga el <b>.csv</b> — aún más fácil</span></p></div></div>
-          <div className="flex gap-4"><span className="bg-primary text-white h-8 w-8 rounded-full flex items-center justify-center font-bold flex-shrink-0">3</span><div><p className="font-bold">Súbelo aquí abajo</p><p className="text-sm text-gray-400">Arrastra el archivo .html o .csv y dale a Importar. ¡Listo! Fotos y datos se suben solos a tu inventario.</p></div></div>
-        </div>
+      <div className="glass p-6 rounded-2xl border border-white/5 mb-6">
+        <h2 className="font-bold mb-2">📋 Instrucciones para empleados (2 minutos):</h2>
+        <ol className="list-decimal pl-5 space-y-2 text-sm text-gray-300">
+          <li><b>Loguéate en Manheim</b> con tu usuario + código SMS → abre <span className="bg-white/10 px-2 py-0.5 rounded text-xs">search.manheim.com → tu búsqueda 0044d011... → verifica filtro Puerto Rico</span></li>
+          <li><b>Descarga el CSV:</b> en Manheim arriba a la derecha → <b>Export → Export to CSV</b> → guarda <b>Export.csv</b></li>
+          <li><b>Descarga las fotos:</b> haz scroll para cargar todos los vehículos → presiona <b>F12</b> → pestaña <b>Consola</b> → si sale aviso escribe <b className="text-white">allow pasting</b> y Enter → pega el script de abajo y Enter → se descarga <b>manheim-con-fotos.json</b></li>
+          <li><b>Súbelos aquí:</b> arrastra primero el <b>Export.csv</b> y luego el <b>manheim-con-fotos.json</b> → Verás preview → <b>Importar</b></li>
+        </ol>
+        <details className="mt-4"><summary className="cursor-pointer text-sm font-bold text-primary">Ver script para paso 3 (copiar todo)</summary><pre className="mt-2 p-3 bg-black rounded-xl text-xs overflow-auto text-green-300">{`(async()=>{const cards=[...document.querySelectorAll('#one_search img')].map(i=>i.src).filter(s=>s.includes('http')).slice(0,400);const vins=[...document.documentElement.innerHTML.matchAll(/\\b[A-HJ-NPR-Z0-9]{17}\\b/g)].map(m=>m[0]);const out=vins.slice(0,cards.length).map((v,i)=>({vin:v,image:cards[i]}));const b=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='manheim-con-fotos.json';a.click();alert('✅ '+out.length+' fotos capturadas')})()`}</pre></details>
       </div>
 
-      <label className="glass border-2 border-dashed border-white/10 rounded-2xl p-10 flex flex-col items-center cursor-pointer hover:border-primary/50 bg-white/[0.02] mb-6">
-        <Upload className="h-12 w-12 text-primary mb-3" />
-        <span className="font-bold text-lg">Arrastra tu archivo aquí o haz click</span>
-        <span className="text-sm text-gray-400">Acepta .html (Ctrl+S), .csv (Export), .json</span>
-        <input type="file" accept=".html,.htm,.csv,.json" onChange={handleFile} className="hidden" />
-        <span className="mt-4 bg-primary text-white px-6 py-2 rounded-xl font-bold">Seleccionar archivo</span>
-      </label>
+      <div className="grid md:grid-cols-2 gap-4 mb-6">
+        <label className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center cursor-pointer ${csvVehicles ? 'border-green-500/50 bg-green-500/5' : 'border-white/10 bg-white/[0.02] hover:border-primary/50'}`}>
+          <Upload className="h-8 w-8 mb-2" /><span className="font-bold">1. Export.csv</span><span className="text-xs text-gray-400">{csvVehicles ? `${csvVehicles.length} vehículos` : 'Click para seleccionar'}</span><input type="file" accept=".csv" onChange={handleCsv} className="hidden" />{csvVehicles && <span className="mt-2 text-green-400 text-xs font-bold">✓ Cargado</span>}
+        </label>
+        <label className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center cursor-pointer ${imagesMap ? 'border-green-500/50 bg-green-500/5' : 'border-white/10 bg-white/[0.02] hover:border-primary/50'}`}>
+          <Upload className="h-8 w-8 mb-2" /><span className="font-bold">2. manheim-con-fotos.json</span><span className="text-xs text-gray-400">{imagesMap ? `${[...imagesMap.values()].flat().length} fotos` : 'Opcional pero recomendado'}</span><input type="file" accept=".json" onChange={handleImages} className="hidden" />{imagesMap && <span className="mt-2 text-green-400 text-xs font-bold">✓ Cargado</span>}
+        </label>
+      </div>
 
       {vehicles.length > 0 && (
         <div className="glass rounded-2xl border border-white/5 overflow-hidden mb-6">
           <div className="p-4 flex justify-between items-center border-b border-white/5">
-            <span className="font-bold">{filtered.length} vehículos detectados {vehicles[0]?.brand === 'N/A' ? '(revisa archivo)' : ''}</span>
-            <button onClick={handleImport} disabled={importing} className="bg-primary hover:bg-primary-hover px-6 py-2 rounded-xl font-bold flex items-center gap-2 disabled:opacity-50">
-              {importing ? <><Loader2 className="h-4 w-4 animate-spin" /> Importando...</> : <>Importar {filtered.length} a Auto Bid Pro</>}
-            </button>
+            <span className="font-bold">{vehicles.length} vehículos listos {imagesMap ? `· ${vehicles.filter(v=>v.images.length>0).length} con fotos` : '· sin fotos'}{!imagesMap && <span className="text-yellow-400 font-normal text-xs ml-2">Sube el JSON de fotos para incluir imágenes</span>}</span>
+            <button onClick={handleImport} disabled={importing} className="bg-primary hover:bg-primary-hover px-6 py-2 rounded-xl font-bold flex items-center gap-2 disabled:opacity-50">{importing ? <><Loader2 className="h-4 w-4 animate-spin" /> Importando...</> : <>Importar {vehicles.length}</>}</button>
           </div>
-          <div className="max-h-80 overflow-auto">
-            <table className="w-full text-sm"><thead className="bg-white/5 sticky top-0"><tr><th className="p-3 text-left">Vehículo</th><th className="p-3">VIN</th><th className="p-3">Fotos</th></tr></thead>
-              <tbody className="divide-y divide-white/5">{filtered.slice(0, 50).map((v, i) => <tr key={i}><td className="p-3">{v.year} {v.brand} {v.model}</td><td className="p-3 font-mono text-xs">{v.vin}</td><td className="p-3">{v.images.length}</td></tr>)}</tbody>
-            </table>
-          </div>
+          <div className="max-h-80 overflow-auto"><table className="w-full text-sm"><thead className="bg-white/5 sticky top-0"><tr><th className="p-3 text-left">Vehículo</th><th className="p-3">VIN</th><th className="p-3">Fotos</th></tr></thead><tbody className="divide-y divide-white/5">{vehicles.slice(0, 30).map((v,i)=><tr key={i}><td className="p-3">{v.year} {v.brand} {v.model}</td><td className="p-3 font-mono text-xs">{v.vin}</td><td className="p-3">{v.images.length || '-'}</td></tr>)}</tbody></table>{vehicles.length>30 && <p className="text-center text-xs text-gray-500 p-2">y {vehicles.length-30} más...</p>}</div>
         </div>
       )}
 
-      {result && <div className={`p-4 rounded-xl border ${result.fail === 0 ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'}`}><p className="font-bold flex items-center gap-2"><Check className="h-4 w-4" /> {result.ok} importados {result.fail > 0 && `• ${result.fail} fallidos`}</p>{result.errs.slice(0, 5).map((e, i) => <p key={i} className="text-xs mt-1">{e}</p>)}<Link href="/admin/vehicles" className="inline-block mt-3 bg-white text-black px-4 py-2 rounded-xl text-sm font-bold">Ver inventario →</Link></div>}
-
-      <p className="text-center text-xs text-gray-500 mt-6">¿Ya tienes tu web online? Ve a <span className="text-white font-mono">tu-dominio.com/admin/vehicles/import</span> — no necesitas `npm run dev` si ya está publicada.</p>
+      {result && <div className={`p-4 rounded-xl border ${result.fail===0?'bg-green-500/10 border-green-500/20 text-green-400':'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'}`}><p className="font-bold flex items-center gap-2"><Check className="h-4 w-4" /> {result.ok} importados {result.fail>0 && `· ${result.fail} duplicados/error`}</p>{result.errs.slice(0,5).map((e,i)=><p key={i} className="text-xs mt-1">{e}</p>)}<Link href="/admin/vehicles" className="inline-block mt-3 bg-white text-black px-4 py-2 rounded-xl text-sm font-bold">Ver inventario →</Link></div>}
     </div>
   );
 }
