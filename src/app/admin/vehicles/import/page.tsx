@@ -12,7 +12,7 @@ function parseCSVLine(line: string, delim: string): string[] {
   cols.push(cur.trim()); return cols.map(c => c.replace(/^"|"$/g, '').trim());
 }
 function parseCSV(text: string): ParsedVehicle[] {
-  text = text.replace(/^\uFEFF/, '').replace(/\r/g, '');
+  text = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const lines = text.split(/\n/).filter(l => l.trim()); if (lines.length < 2) return [];
   const delim = (lines[0].split(';').length > lines[0].split(',').length) ? ';' : ',';
   const headers = parseCSVLine(lines[0], delim).map(h => h.toLowerCase().trim());
