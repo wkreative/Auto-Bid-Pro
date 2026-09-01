@@ -36,10 +36,11 @@ export default function ImportPage() {
 
   useEffect(() => { setBatchId(`MAN-PR-${new Date().toISOString().slice(0,10)}-${Math.random().toString(36).slice(2,6).toUpperCase()}`); loadBatches(); }, []);
   const loadBatches = async () => {
-    const { data } = await supabase.from('vehicles').select('internal_notes').not('internal_notes','is',null);
-    const map = new Map<string, number>();
-    (data||[]).forEach((r:any)=>{ const m=r.internal_notes?.match(/BATCH:([^\s|]+)/); if(m) map.set(m[1], (map.get(m[1])||0)+1); });
-    setBatches([...map.entries()].map(([batch,count])=>({batch,count})).sort((a,b)=>b.batch.localeCompare(a.batch)).slice(0,10));
+    try {
+      const res = await fetch('/api/admin/batches');
+      const data = await res.json();
+      setBatches(data.batches || []);
+    } catch {}
   };
 
   const handleCsv = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,12 +71,10 @@ export default function ImportPage() {
   const copyScript = async () => { await navigator.clipboard.writeText(SCRIPT); setCopied(true); setTimeout(()=>setCopied(false),2000); };
   const deleteBatch = async (batch: string) => {
     if(!confirm(`¿Eliminar todo el lote ${batch}? Se borrarán todos los vehículos de ese grupo.`)) return;
-    const { data: toDel } = await supabase.from('vehicles').select('id').ilike('internal_notes', `%BATCH:${batch}%`);
-    if(!toDel?.length) return alert('No se encontraron vehículos');
-    const ids = toDel.map((r:any)=>r.id);
-    await supabase.from('vehicle_images').delete().in('vehicle_id', ids);
-    await supabase.from('vehicles').delete().in('id', ids);
-    alert(`${ids.length} vehículos eliminados`); loadBatches();
+    const res = await fetch('/api/admin/delete-batch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ batch }) });
+    const data = await res.json();
+    if (!res.ok) return alert('Error: ' + data.error);
+    alert(`${data.deleted} vehículos eliminados`); loadBatches();
   };
 
   const handleImport = async () => {
