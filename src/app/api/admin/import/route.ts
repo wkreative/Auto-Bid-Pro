@@ -11,12 +11,14 @@ export async function POST(req: NextRequest) {
     const batchId = `MAN-PR-${new Date().toISOString().slice(0,10)}-${Math.random().toString(36).slice(2,6).toUpperCase()}`;
     for (const v of vehicles) {
       try {
+        const descBase = v.description ? `${v.description} | ` : '';
+        const fullDesc = `${descBase}Importado Manheim PR [${batchId}] - ${v.year} ${v.brand} ${v.model} ${v.trim||''}`.trim();
         const { data: ins, error } = await supabase.from('vehicles').insert([{
           brand: v.brand, model: v.model, year: v.year, vin: v.vin, mileage: v.mileage,
           location: v.location || 'Puerto Rico - Manheim Caribbean', sale_type: 'auction',
-          starting_price: v.starting_price, status: 'published', risk_level: 'low',
-          exterior_color: v.exterior_color, internal_notes: `BATCH:${batchId} | Manheim PR`,
-          description: `Importado Manheim PR [${batchId}] - ${v.year} ${v.brand} ${v.model}`.trim()
+          starting_price: v.starting_price, direct_sale_price: null, status: 'published', risk_level: 'low',
+          exterior_color: v.exterior_color, internal_notes: `BATCH:${batchId} | Manheim PR | subasta`,
+          description: fullDesc
         }]).select().single();
         if (error) throw error;
         ok++;

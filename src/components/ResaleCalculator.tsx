@@ -15,10 +15,10 @@ export default function ResaleCalculator({ startingPrice, estimatedResaleValue, 
   const [userResaleValue, setUserResaleValue] = useState(estimatedResaleValue || '');
 
   const totalInvestment = startingPrice + repairCost + otherCosts;
-  const resaleValue = userResaleValue ? parseFloat(userResaleValue) : (estimatedResaleValue || 0);
+  const resaleValue = userResaleValue ? parseFloat(userResaleValue as any) : (estimatedResaleValue || 0);
   const potentialProfit = resaleValue - totalInvestment;
-  const profitMargin = totalInvestment > 0 ? ((potentialProfit / totalInvestment) * 100) : 0;
   const roi = totalInvestment > 0 ? ((potentialProfit / totalInvestment) * 100) : 0;
+  const hasInput = repairCost > 0 || otherCosts > 0 || (userResaleValue !== '' && resaleValue > 0);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
@@ -113,63 +113,46 @@ export default function ResaleCalculator({ startingPrice, estimatedResaleValue, 
         </div>
       </div>
 
-      <div className="border-t border-white/10 pt-6 space-y-4">
-        <h4 className="font-bold text-gray-300">Resultados</h4>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-            <p className="text-sm text-gray-400">Inversión Total</p>
-            <p className="text-2xl font-bold text-white">{formatCurrency(totalInvestment)}</p>
-            <p className="text-xs text-gray-500 mt-1">
-              Subasta + Reparaciones + Otros
-            </p>
-          </div>
-          <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-            <p className="text-sm text-gray-400">Valor de Reventa</p>
-            <p className="text-2xl font-bold text-white">{formatCurrency(resaleValue)}</p>
-            <p className="text-xs text-gray-500 mt-1">
-              {userResaleValue ? 'Tu estimación' : 'Estimado por vendedor'}
-            </p>
-          </div>
-        </div>
-
-        <div className={`p-4 rounded-xl border-2 ${
-          potentialProfit >= 0 
-            ? 'bg-green-500/10 border-green-500/30' 
-            : 'bg-red-500/10 border-red-500/30'
-        }`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {potentialProfit >= 0 ? (
-                <TrendingUp className="h-5 w-5 text-green-400" />
-              ) : (
-                <AlertTriangle className="h-5 w-5 text-red-400" />
-              )}
-              <span className="font-bold text-lg">
-                {potentialProfit >= 0 ? 'Ganancia Potencial' : 'Pérdida Potencial'}
-              </span>
+      {!hasInput ? (
+        <p className="text-sm text-gray-500 text-center py-4 border border-dashed border-white/10 rounded-xl">Ingresa costos y valor de reventa para ver el resultado</p>
+      ) : (
+        <div className="border-t border-white/10 pt-6 space-y-4">
+          <h4 className="font-bold text-gray-300">Resultados</h4>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+              <p className="text-sm text-gray-400">Inversión Total</p>
+              <p className="text-2xl font-bold text-white">{formatCurrency(totalInvestment)}</p>
+              <p className="text-xs text-gray-500 mt-1">Subasta + Reparaciones + Otros</p>
             </div>
-            <div className="text-right">
-              <p className={`text-2xl font-bold ${potentialProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {formatCurrency(Math.abs(potentialProfit))}
-              </p>
-              <p className="text-sm text-gray-400 mt-1">
-                ROI: <span className={`font-bold ${roi >= 0 ? 'text-green-400' : 'text-red-400'}`}>{formatPercent(roi)}</span>
-              </p>
+            <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+              <p className="text-sm text-gray-400">Valor de Reventa</p>
+              <p className="text-2xl font-bold text-white">{formatCurrency(resaleValue)}</p>
+              <p className="text-xs text-gray-500 mt-1">{userResaleValue ? 'Tu estimación' : 'Estimado por vendedor'}</p>
             </div>
           </div>
-        </div>
-
-        {resaleValue > 0 && (
-          <div className="bg-primary/10 border border-primary/20 p-4 rounded-xl">
-            <p className="text-sm text-primary/80 flex items-center gap-2">
-              <ArrowUpRight className="h-4 w-4" />
-              <strong>Precio Máximo de Oferta Sugerido:</strong> {formatCurrency(resaleValue - repairCost - otherCosts)}
-              <span className="text-xs ml-2 text-gray-500">(para break-even)</span>
-            </p>
+          <div className={`p-4 rounded-xl border-2 ${potentialProfit >= 0 ? 'bg-green-500/10 border-green-500/30' : 'bg-white/5 border-white/10'}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <TrendingUp className={`h-5 w-5 ${potentialProfit >= 0 ? 'text-green-400' : 'text-gray-400'}`} />
+                <span className="font-bold text-lg">{potentialProfit >= 0 ? 'Ganancia Potencial' : 'Resultado'}</span>
+              </div>
+              <div className="text-right">
+                <p className={`text-2xl font-bold ${potentialProfit >= 0 ? 'text-green-400' : 'text-white'}`}>{formatCurrency(potentialProfit)}</p>
+                <p className="text-sm text-gray-400 mt-1">ROI: <span className={`font-bold ${roi >= 0 ? 'text-green-400' : 'text-gray-400'}`}>{formatPercent(roi)}</span></p>
+              </div>
+            </div>
           </div>
-        )}
-      </div>
+          {resaleValue > 0 && (
+            <div className="bg-primary/10 border border-primary/20 p-4 rounded-xl">
+              <p className="text-sm text-primary/80 flex items-center gap-2">
+                <ArrowUpRight className="h-4 w-4" />
+                <strong>Precio Máximo de Oferta Sugerido:</strong> {formatCurrency(resaleValue - repairCost - otherCosts)}
+                <span className="text-xs ml-2 text-gray-500">(para break-even)</span>
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
