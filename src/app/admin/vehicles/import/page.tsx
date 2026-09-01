@@ -79,20 +79,16 @@ export default function ImportPage() {
   };
 
   const handleImport = async () => {
-    setImporting(true); setResult(null); let ok = 0, fail = 0; const errs: string[] = [];
-    for (const v of vehicles) {
-      try {
-        const { data: ins, error } = await supabase.from('vehicles').insert([{ brand: v.brand, model: v.model + (v.trim ? ' ' + v.trim : ''), year: v.year, vin: v.vin, mileage: v.mileage, location: v.location, sale_type: 'auction', starting_price: v.starting_price, status: 'published', risk_level: 'low', exterior_color: v.exterior_color, internal_notes: `BATCH:${batchId} | Manheim PR`, description: `Importado Manheim PR [${batchId}] - ${v.year} ${v.brand} ${v.model} ${v.trim || ''}`.trim() }]).select().single();
-        if (error) throw error; ok++;
-        for (let i = 0; i < v.images.length; i++) {
-          let finalUrl = v.images[i];
-          try { const r = await fetch(v.images[i]); if (r.ok) { const b = await r.blob(); const path = `${ins.id}/images/${Math.random().toString(36).slice(2)}.jpg`; const { error: upErr } = await supabase.storage.from('vehicle_media').upload(path, b); if (!upErr) { const { data } = supabase.storage.from('vehicle_media').getPublicUrl(path); finalUrl = data.publicUrl; } } } catch {}
-          await supabase.from('vehicle_images').insert([{ vehicle_id: ins.id, url: finalUrl, is_primary: i === 0 }]);
-        }
-      } catch (e: any) { fail++; errs.push(`${v.vin}: ${e.message?.includes('vehicles_vin_key') ? 'VIN duplicado' : e.message}`); }
-    }
-    setResult({ ok, fail, errs, batchId }); setImporting(false); loadBatches();
-    if(ok>0) setBatchId(`MAN-PR-${new Date().toISOString().slice(0,10)}-${Math.random().toString(36).slice(2,6).toUpperCase()}`);
+    setImporting(true); setResult(null);
+    try {
+      const res = await fetch('/api/admin/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vehicles: vehicles.map(v=>({brand:v.brand, model: v.model + (v.trim?' '+v.trim:''), year:v.year, vin:v.vin, mileage:v.mileage, location:v.location, starting_price:v.starting_price, exterior_color:v.exterior_color, images:v.images})) }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error en importación');
+      setResult({ ok: data.ok, fail: data.fail, errs: data.errs, batchId: data.batchId });
+      loadBatches();
+      if(data.ok>0) setBatchId(`MAN-PR-${new Date().toISOString().slice(0,10)}-${Math.random().toString(36).slice(2,6).toUpperCase()}`);
+    } catch (e:any){ setResult({ ok:0, fail: vehicles.length, errs:[e.message], batchId}); }
+    setImporting(false);
   };
 
   return (
