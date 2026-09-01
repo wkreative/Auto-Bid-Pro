@@ -10,18 +10,29 @@ interface ResaleCalculatorProps {
 }
 
 export default function ResaleCalculator({ startingPrice, estimatedResaleValue, estimatedRepairCost }: ResaleCalculatorProps) {
-  const [repairCost, setRepairCost] = useState(estimatedRepairCost || 0);
-  const [otherCosts, setOtherCosts] = useState(0);
-  const [userResaleValue, setUserResaleValue] = useState(estimatedResaleValue || '');
+  const [repairCost, setRepairCost] = useState<string>(estimatedRepairCost ? String(estimatedRepairCost) : '');
+  const [otherCosts, setOtherCosts] = useState<string>('');
+  const [userResaleValue, setUserResaleValue] = useState<string>(estimatedResaleValue ? String(estimatedResaleValue) : '');
 
-  const totalInvestment = startingPrice + repairCost + otherCosts;
-  const resaleValue = userResaleValue ? parseFloat(userResaleValue as any) : (estimatedResaleValue || 0);
+  const numRepair = parseFloat(repairCost.replace(/,/g, '')) || 0;
+  const numOther = parseFloat(otherCosts.replace(/,/g, '')) || 0;
+  const numResale = userResaleValue ? parseFloat(String(userResaleValue).replace(/,/g, '')) : (estimatedResaleValue || 0);
+  const totalInvestment = startingPrice + numRepair + numOther;
+  const resaleValue = numResale;
   const potentialProfit = resaleValue - totalInvestment;
   const roi = totalInvestment > 0 ? ((potentialProfit / totalInvestment) * 100) : 0;
-  const hasInput = repairCost > 0 || otherCosts > 0 || (userResaleValue !== '' && resaleValue > 0);
+  const hasInput = numRepair > 0 || numOther > 0 || resaleValue > 0;
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+  };
+  const formatInput = (val: string) => {
+    const n = parseFloat(val.replace(/,/g, ''));
+    if (isNaN(n)) return val;
+    return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+  };
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    if (e.target.value === '0' || e.target.value === '0.00') e.target.value = '';
   };
 
   const formatPercent = (value: number) => {
@@ -59,16 +70,17 @@ export default function ResaleCalculator({ startingPrice, estimatedResaleValue, 
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               value={repairCost}
-              onChange={(e) => setRepairCost(parseFloat(e.target.value) || 0)}
-              min={0}
-              step={100}
-              placeholder="Ej. 3000"
+              onFocus={(e) => { if (e.target.value === '0' || e.target.value === '0.00') setRepairCost(''); }}
+              onChange={(e) => setRepairCost(e.target.value.replace(/[^0-9.,]/g, ''))}
+              onBlur={(e) => { if (e.target.value) setRepairCost(formatInput(e.target.value)); }}
+              placeholder="0.00"
               className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-3 pl-8 pr-4 text-lg font-bold text-white focus:outline-none focus:border-primary transition-colors"
             />
           </div>
-          {estimatedRepairCost && repairCost !== estimatedRepairCost && (
+          {estimatedRepairCost && parseFloat(repairCost.replace(/,/g,'')) !== estimatedRepairCost && (
             <p className="text-xs text-gray-500 mt-1">Valor estimado del vendedor: {formatCurrency(estimatedRepairCost)}</p>
           )}
         </div>
@@ -80,12 +92,13 @@ export default function ResaleCalculator({ startingPrice, estimatedResaleValue, 
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               value={otherCosts}
-              onChange={(e) => setOtherCosts(parseFloat(e.target.value) || 0)}
-              min={0}
-              step={100}
-              placeholder="Ej. 1500"
+              onFocus={(e) => { if (e.target.value === '0' || e.target.value === '0.00') setOtherCosts(''); }}
+              onChange={(e) => setOtherCosts(e.target.value.replace(/[^0-9.,]/g, ''))}
+              onBlur={(e) => { if (e.target.value) setOtherCosts(formatInput(e.target.value)); }}
+              placeholder="0.00"
               className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-3 pl-8 pr-4 text-lg font-bold text-white focus:outline-none focus:border-primary transition-colors"
             />
           </div>
@@ -98,12 +111,13 @@ export default function ResaleCalculator({ startingPrice, estimatedResaleValue, 
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               value={userResaleValue}
-              onChange={(e) => setUserResaleValue(e.target.value)}
-              min={0}
-              step={100}
-              placeholder={estimatedResaleValue ? formatCurrency(estimatedResaleValue) : 'Ej. 25000'}
+              onFocus={(e) => { if (e.target.value === '0' || e.target.value === '0.00') setUserResaleValue(''); }}
+              onChange={(e) => setUserResaleValue(e.target.value.replace(/[^0-9.,]/g, ''))}
+              onBlur={(e) => { if (e.target.value) setUserResaleValue(formatInput(e.target.value)); }}
+              placeholder={estimatedResaleValue ? formatCurrency(estimatedResaleValue) : '0.00'}
               className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-3 pl-8 pr-4 text-lg font-bold text-white focus:outline-none focus:border-primary transition-colors"
             />
           </div>
