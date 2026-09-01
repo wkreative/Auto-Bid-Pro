@@ -86,7 +86,7 @@ export default function ImportPage() {
       setResult({ ok: data.ok, fail: data.fail, errs: data.errs, batchId: data.batchId });
       loadBatches();
       if(data.ok>0) setBatchId(`MAN-PR-${new Date().toISOString().slice(0,10)}-${Math.random().toString(36).slice(2,6).toUpperCase()}`);
-    } catch (e:any){ setResult({ ok:0, fail: vehicles.length, errs:[e.message], batchId}); }
+    } catch (e){ setResult({ ok:0, fail: vehicles.length, errs:[e.message], batchId}); }
     setImporting(false);
   };
 
