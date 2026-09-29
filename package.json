@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node tests/core-flows.cjs"
+    "test": "node tests/core-flows.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
