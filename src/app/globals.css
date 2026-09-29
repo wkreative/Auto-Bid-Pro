@@ -36,3 +36,12 @@ body {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
+
+@media print {
+  @page { size: landscape; margin: 12mm; }
+  body { background: white; color: black; }
+  .glass { background: white; backdrop-filter: none; box-shadow: none; }
+  main { overflow: visible !important; }
+  tr { break-inside: avoid; }
+  thead { display: table-header-group; }
+}

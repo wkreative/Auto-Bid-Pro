@@ -23,12 +23,6 @@ export default async function DashboardPage({ searchParams }: Props) {
     query = query.or(`brand.ilike.%${q}%,model.ilike.%${q}%,vin.ilike.%${q}%`);
   }
 
-  if (filter !== 'Todos') {
-    if (filter === 'Riesgo Bajo') query = query.eq('risk_level', 'low');
-    else if (filter === 'Riesgo Medio') query = query.eq('risk_level', 'medium');
-    else if (filter === 'Riesgo Alto') query = query.eq('risk_level', 'high');
-  }
-
   if (saleType === 'direct_sale' || saleType === 'auction') {
     query = query.eq('sale_type', saleType);
   }
@@ -58,26 +52,6 @@ export default async function DashboardPage({ searchParams }: Props) {
         </form>
       </div>
       
-      {/* Risk Filters */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        {['Todos', 'Riesgo Bajo', 'Riesgo Medio', 'Riesgo Alto'].map((f) => {
-          const linkParams = new URLSearchParams();
-          if (q) linkParams.set('q', q);
-          if (saleType) linkParams.set('sale_type', saleType);
-          if (f !== 'Todos') linkParams.set('filter', f);
-          return (
-          <Link 
-            href={`/dashboard${linkParams.toString() ? '?' + linkParams.toString() : ''}`}
-            key={f}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              filter === f ? 'bg-primary text-white' : 'glass text-gray-300 hover:text-white hover:border-primary/50'
-            }`}
-          >
-            {f}
-          </Link>
-        )})}
-      </div>
-
       {/* Sale Type Filters */}
       <div className="flex flex-wrap gap-2 mb-8">
         {[
@@ -130,13 +104,6 @@ export default async function DashboardPage({ searchParams }: Props) {
                 }`}>
                   {vehicle.sale_type === 'direct_sale' ? 'Venta Directa' : 'Subasta'}
                 </span>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md ${
-                  vehicle.risk_level === 'low' ? 'bg-green-500/80 text-white' : 
-                  vehicle.risk_level === 'medium' ? 'bg-yellow-500/80 text-white' : 
-                  'bg-red-500/80 text-white'
-                }`}>
-                  Riesgo {vehicle.risk_level === 'low' ? 'Bajo' : vehicle.risk_level === 'medium' ? 'Medio' : 'Alto'}
-                </span>
               </div>
               <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-[#050505] to-transparent">
                 <h3 className="text-xl font-bold">{vehicle.brand} {vehicle.model}</h3>
@@ -152,7 +119,7 @@ export default async function DashboardPage({ searchParams }: Props) {
                 </div>
                 <div className="flex items-center gap-2 text-gray-400">
                   <MapPin className="h-4 w-4 text-primary" />
-                  <span className="text-sm">{vehicle.location}</span>
+                  <span className="text-sm">Puerto Rico</span>
                 </div>
               </div>
               

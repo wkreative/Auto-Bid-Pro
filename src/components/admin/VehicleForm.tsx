@@ -4,13 +4,16 @@ import { useState } from 'react';
 import { Upload, Save, X, Loader2, Trash2, Play } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
+import { publicationText } from '@/lib/publication';
 
 type VehicleFormProps = {
   vehicle?: any;
 };
 
 export default function VehicleForm({ vehicle }: VehicleFormProps) {
-  const isEdit = !!vehicle;
+  const [savedVehicleId, setSavedVehicleId] = useState<string | undefined>(vehicle?.id);
+  const isEdit = !!savedVehicleId;
+  const [hasImages, setHasImages] = useState(!!vehicle?.vehicle_images?.length);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [videoFiles, setVideoFiles] = useState<File[]>([]);
@@ -65,10 +68,9 @@ export default function VehicleForm({ vehicle }: VehicleFormProps) {
         year: parseInt(formData.get('year') as string),
         vin: formData.get('vin'),
         mileage: parseInt(formData.get('mileage') as string),
-        location: formData.get('location'),
+        location: 'Puerto Rico',
         sale_type: saleTypeValue,
-        description: formData.get('description'),
-        risk_level: formData.get('risk_level'),
+        description: publicationText(String(formData.get('description') || '')),
         status: formData.get('status'),
       };
 
@@ -84,7 +86,7 @@ export default function VehicleForm({ vehicle }: VehicleFormProps) {
         vehicleData.estimated_repair_cost = null;
       }
 
-      let vehicleId = vehicle?.id;
+      let vehicleId = savedVehicleId;
 
       if (isEdit) {
         const { error } = await supabase.from('vehicles').update(vehicleData).eq('id', vehicleId);
@@ -94,36 +96,42 @@ export default function VehicleForm({ vehicle }: VehicleFormProps) {
           .from('vehicles').insert([vehicleData]).select().single();
         if (vehicleError) throw vehicleError;
         vehicleId = newVehicle.id;
+        setSavedVehicleId(vehicleId);
       }
 
       const errors: string[] = [];
       for (let i = 0; i < imageFiles.length; i++) {
         const file = imageFiles[i];
         const fileExt = file.name.split('.').pop();
-        const fileName = `${vehicleId}/images/${Math.random().toString(36).slice(2)}.${fileExt}`;
+        const fileName = `${vehicleId}/images/${crypto.randomUUID()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage.from('vehicle_media').upload(fileName, file);
         if (!uploadError) {
           const { data: publicUrlData } = supabase.storage.from('vehicle_media').getPublicUrl(fileName);
-          await supabase.from('vehicle_images').insert([{ vehicle_id: vehicleId, url: publicUrlData.publicUrl, is_primary: i === 0 }]);
+          const { error: linkError } = await supabase.from('vehicle_images').insert([{ vehicle_id: vehicleId, url: publicUrlData.publicUrl, is_primary: !hasImages && i === 0 }]);
+          if (linkError) errors.push(`Imagen ${file.name}: ${linkError.message}`);
+          else setHasImages(true);
         } else {
           errors.push(`Imagen ${file.name}: ${uploadError.message}`);
         }
       }
       for (const file of videoFiles) {
         const fileExt = file.name.split('.').pop();
-        const fileName = `${vehicleId}/videos/${Math.random().toString(36).slice(2)}.${fileExt}`;
+        const fileName = `${vehicleId}/videos/${crypto.randomUUID()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage.from('vehicle_media').upload(fileName, file);
         if (!uploadError) {
           const { data: publicUrlData } = supabase.storage.from('vehicle_media').getPublicUrl(fileName);
-          await supabase.from('vehicle_videos').insert([{ vehicle_id: vehicleId, url: publicUrlData.publicUrl }]);
+          const { error: linkError } = await supabase.from('vehicle_videos').insert([{ vehicle_id: vehicleId, url: publicUrlData.publicUrl }]);
+          if (linkError) errors.push(`Video ${file.name}: ${linkError.message}`);
         } else {
           errors.push(`Video ${file.name}: ${uploadError.message}`);
         }
       }
       if (errors.length > 0) setUploadErrors(errors);
 
-      setUploadSuccess(true);
-      setTimeout(() => router.push('/admin/vehicles'), 1500);
+      setUploadSuccess(errors.length === 0);
+      router.refresh();
+      setImageFiles([]);
+      setVideoFiles([]);
 
     } catch (error: any) {
       console.error(error);
@@ -175,11 +183,11 @@ export default function VehicleForm({ vehicle }: VehicleFormProps) {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2">Ubicación *</label>
-              <input name="location" required defaultValue={vehicle?.location || ''} type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-primary focus:outline-none" placeholder="Ej. Miami, FL" />
+              <input name="location" required value="Puerto Rico" readOnly type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-primary focus:outline-none"  />
             </div>
             <div className="md:col-span-3">
               <label className="block text-sm font-medium text-gray-400 mb-2">Descripción (Opcional)</label>
-              <textarea name="description" rows={4} defaultValue={vehicle?.description || ''} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-primary focus:outline-none" placeholder="Ingresa una descripción del vehículo, condiciones, historial, etc."></textarea>
+              <textarea name="description" rows={4} defaultValue={publicationText(vehicle?.description || '')} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-primary focus:outline-none" placeholder="Ingresa una descripción del vehículo, condiciones, historial, etc."></textarea>
             </div>
           </div>
         </div>
@@ -209,7 +217,7 @@ export default function VehicleForm({ vehicle }: VehicleFormProps) {
                 <input name="estimated_retail" defaultValue={vehicle?.estimated_resale_value || ''} type="number" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-primary focus:outline-none" placeholder="$" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Costo Est. Reparación</label>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Costos Estimado de Reparación</label>
                 <input name="estimated_repair" defaultValue={vehicle?.estimated_repair_cost || ''} type="number" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:border-primary focus:outline-none" placeholder="$" />
               </div>
             </div>
@@ -223,14 +231,7 @@ export default function VehicleForm({ vehicle }: VehicleFormProps) {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Nivel de Riesgo</label>
-              <select name="risk_level" defaultValue={vehicle?.risk_level || 'low'} className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2 text-white focus:border-primary focus:outline-none">
-                <option value="low">Bajo</option>
-                <option value="medium">Medio</option>
-                <option value="high">Alto</option>
-              </select>
-            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2">Estado</label>
               <select name="status" defaultValue={vehicle?.status || 'draft'} className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2 text-white focus:border-primary focus:outline-none">
@@ -290,13 +291,13 @@ export default function VehicleForm({ vehicle }: VehicleFormProps) {
           <p className="text-sm text-gray-400 mb-4">Agrega nuevas imágenes o videos al vehículo.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="border-2 border-dashed border-white/10 rounded-2xl p-8 text-center hover:border-primary/50 transition-colors bg-white/5 relative">
-              <input type="file" multiple accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+              <input type="file" disabled={isSubmitting} multiple accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
               <Upload className="h-10 w-10 text-gray-400 mx-auto mb-3" />
               <p className="text-gray-300 font-medium">Imágenes</p>
               <p className="text-sm text-gray-500 mt-2">{imageFiles.length} seleccionados</p>
             </div>
             <div className="border-2 border-dashed border-white/10 rounded-2xl p-8 text-center hover:border-primary/50 transition-colors bg-white/5 relative">
-              <input type="file" multiple accept="video/mp4,video/webm,video/ogg" onChange={handleVideoChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+              <input type="file" disabled={isSubmitting} multiple accept="video/mp4,video/webm,video/ogg" onChange={handleVideoChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
               <Upload className="h-10 w-10 text-gray-400 mx-auto mb-3" />
               <p className="text-gray-300 font-medium">Videos</p>
               <p className="text-sm text-gray-500 mt-2">{videoFiles.length} seleccionados</p>
@@ -311,8 +312,9 @@ export default function VehicleForm({ vehicle }: VehicleFormProps) {
         </div>
 
         {uploadSuccess && (
-          <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
-            <p className="text-green-400 font-bold">Vehículo {isEdit ? 'actualizado' : 'publicado'} exitosamente. Redirigiendo...</p>
+          <div role="status" aria-live="polite" className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+            <p className="text-green-400 font-bold">¡Carga terminada! El vehículo y sus archivos se guardaron correctamente.</p>
+            <a href="/admin/vehicles" className="inline-block mt-2 underline">Volver al inventario</a>
           </div>
         )}
 

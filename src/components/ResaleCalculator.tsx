@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Calculator, DollarSign, TrendingUp, AlertTriangle, ArrowUpRight } from 'lucide-react';
+import { parseAmount } from '@/lib/calculator';
+import { Calculator, DollarSign, TrendingUp, ArrowUpRight } from 'lucide-react';
 
 interface ResaleCalculatorProps {
   startingPrice: number;
@@ -14,10 +15,10 @@ export default function ResaleCalculator({ startingPrice, estimatedResaleValue, 
   const [otherCosts, setOtherCosts] = useState<string>('');
   const [userResaleValue, setUserResaleValue] = useState<string>(estimatedResaleValue ? String(estimatedResaleValue) : '');
 
-  const numRepair = parseFloat(repairCost.replace(/,/g, '')) || 0;
-  const numOther = parseFloat(otherCosts.replace(/,/g, '')) || 0;
-  const numResale = userResaleValue ? parseFloat(String(userResaleValue).replace(/,/g, '')) : (estimatedResaleValue || 0);
-  const totalInvestment = startingPrice + numRepair + numOther;
+  const numRepair = parseAmount(repairCost);
+  const numOther = parseAmount(otherCosts);
+  const numResale = parseAmount(userResaleValue);
+  const totalInvestment = parseAmount(startingPrice) + numRepair + numOther;
   const resaleValue = numResale;
   const potentialProfit = resaleValue - totalInvestment;
   const roi = totalInvestment > 0 ? ((potentialProfit / totalInvestment) * 100) : 0;
@@ -30,9 +31,6 @@ export default function ResaleCalculator({ startingPrice, estimatedResaleValue, 
     const n = parseFloat(val.replace(/,/g, ''));
     if (isNaN(n)) return val;
     return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
-  };
-  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    if (e.target.value === '0' || e.target.value === '0.00') e.target.value = '';
   };
 
   const formatPercent = (value: number) => {
@@ -65,7 +63,7 @@ export default function ResaleCalculator({ startingPrice, estimatedResaleValue, 
 
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-            <DollarSign className="h-4 w-4" /> Costos de Reparación
+            <DollarSign className="h-4 w-4" /> Costos Estimado de Reparación
           </label>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
@@ -74,7 +72,7 @@ export default function ResaleCalculator({ startingPrice, estimatedResaleValue, 
               inputMode="decimal"
               value={repairCost}
               onFocus={(e) => { if (e.target.value === '0' || e.target.value === '0.00') setRepairCost(''); }}
-              onChange={(e) => setRepairCost(e.target.value.replace(/[^0-9.,]/g, ''))}
+              onChange={(e) => setRepairCost(e.target.value.replace(/[^0-9.,]/g, '').replace(/(\..*)\./g, '$1'))}
               onBlur={(e) => { if (e.target.value) setRepairCost(formatInput(e.target.value)); }}
               placeholder="0.00"
               className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-3 pl-8 pr-4 text-lg font-bold text-white focus:outline-none focus:border-primary transition-colors"
@@ -96,7 +94,7 @@ export default function ResaleCalculator({ startingPrice, estimatedResaleValue, 
               inputMode="decimal"
               value={otherCosts}
               onFocus={(e) => { if (e.target.value === '0' || e.target.value === '0.00') setOtherCosts(''); }}
-              onChange={(e) => setOtherCosts(e.target.value.replace(/[^0-9.,]/g, ''))}
+              onChange={(e) => setOtherCosts(e.target.value.replace(/[^0-9.,]/g, '').replace(/(\..*)\./g, '$1'))}
               onBlur={(e) => { if (e.target.value) setOtherCosts(formatInput(e.target.value)); }}
               placeholder="0.00"
               className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-3 pl-8 pr-4 text-lg font-bold text-white focus:outline-none focus:border-primary transition-colors"
@@ -115,7 +113,7 @@ export default function ResaleCalculator({ startingPrice, estimatedResaleValue, 
               inputMode="decimal"
               value={userResaleValue}
               onFocus={(e) => { if (e.target.value === '0' || e.target.value === '0.00') setUserResaleValue(''); }}
-              onChange={(e) => setUserResaleValue(e.target.value.replace(/[^0-9.,]/g, ''))}
+              onChange={(e) => setUserResaleValue(e.target.value.replace(/[^0-9.,]/g, '').replace(/(\..*)\./g, '$1'))}
               onBlur={(e) => { if (e.target.value) setUserResaleValue(formatInput(e.target.value)); }}
               placeholder={estimatedResaleValue ? formatCurrency(estimatedResaleValue) : '0.00'}
               className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-3 pl-8 pr-4 text-lg font-bold text-white focus:outline-none focus:border-primary transition-colors"
@@ -160,7 +158,7 @@ export default function ResaleCalculator({ startingPrice, estimatedResaleValue, 
             <div className="bg-primary/10 border border-primary/20 p-4 rounded-xl">
               <p className="text-sm text-primary/80 flex items-center gap-2">
                 <ArrowUpRight className="h-4 w-4" />
-                <strong>Precio Máximo de Oferta Sugerido:</strong> {formatCurrency(resaleValue - repairCost - otherCosts)}
+                <strong>Precio Máximo de Oferta Sugerido:</strong> {formatCurrency(resaleValue - numRepair - numOther)}
                 <span className="text-xs ml-2 text-gray-500">(para break-even)</span>
               </p>
             </div>

@@ -8,7 +8,9 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div className="col-span-1 md:col-span-1">
             <div className="mb-6">
-              <img src="/logo.png" alt="Auto Bid Pro" className="h-10 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
+              <Link href="/">
+                <img src="/logo.png" alt="Auto Bid Pro" className="h-12 w-auto object-contain" />
+              </Link>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed mb-6">
               Plataforma premium para la adquisición de vehículos de subasta con acceso exclusivo a inventario a nivel nacional.

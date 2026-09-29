@@ -7,18 +7,18 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#050505] text-white">
       <Navbar />
-      
+
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#050505]/80 to-[#050505] z-10" />
-          <img 
-            src="https://images.unsplash.com/photo-1600712242805-5f78671b24da?q=80&w=2940&auto=format&fit=crop" 
-            alt="Luxury Cars" 
-            className="w-full h-full object-cover opacity-30"
+          <img
+            src="/hero-bg.png"
+            alt="Auto Broker PR Vehicle"
+            className="w-full h-full object-cover opacity-40"
           />
         </div>
-        
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary mb-6">
@@ -50,7 +50,7 @@ export default function Home() {
             <h2 className="text-3xl md:text-4xl font-bold mb-4">¿Cómo funciona?</h2>
             <p className="text-gray-400 max-w-2xl mx-auto">Un proceso simple, transparente y diseñado para maximizar tu rentabilidad en cada compra.</p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="glass p-8 rounded-2xl relative overflow-hidden group hover:border-primary/50 transition-colors duration-300">
               <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6">
@@ -62,18 +62,18 @@ export default function Home() {
                 <Search className="h-40 w-40" />
               </div>
             </div>
-            
+
             <div className="glass p-8 rounded-2xl relative overflow-hidden group hover:border-primary/50 transition-colors duration-300">
               <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6">
                 <MousePointerClick className="h-6 w-6 text-primary" />
               </div>
               <h3 className="text-xl font-bold mb-3">2. Coloca tu Oferta</h3>
-              <p className="text-gray-400">Establece el precio máximo que estás dispuesto a pagar. Nuestro sistema calculará márgenes y niveles de riesgo automáticamente.</p>
+              <p className="text-gray-400">Establece el precio máximo que estás dispuesto a pagar. Nuestro sistema calculará márgenes estimados automáticamente.</p>
               <div className="absolute -bottom-10 -right-10 opacity-5 group-hover:opacity-10 transition-opacity">
                 <MousePointerClick className="h-40 w-40" />
               </div>
             </div>
-            
+
             <div className="glass p-8 rounded-2xl relative overflow-hidden group hover:border-primary/50 transition-colors duration-300">
               <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6">
                 <Car className="h-6 w-6 text-primary" />
@@ -97,18 +97,18 @@ export default function Home() {
               <p className="text-gray-400 mb-8 text-lg">
                 No somos solo un directorio de vehículos. Somos tu equipo de adquisición de activos automotrices con tecnología de punta.
               </p>
-              
+
               <div className="space-y-6">
                 <div className="flex gap-4">
                   <div className="mt-1 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <Shield className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-lg">Análisis de Riesgo Inteligente</h4>
-                    <p className="text-gray-400">Cada vehículo es evaluado para determinar su nivel de riesgo (Bajo, Medio, Alto) y la rentabilidad esperada.</p>
+                    <h4 className="font-bold text-lg">Estimaciones de Rentabilidad</h4>
+                    <p className="text-gray-400">Consulta los costos estimados y calcula la rentabilidad esperada de cada vehículo.</p>
                   </div>
                 </div>
-                
+
                 <div className="flex gap-4">
                   <div className="mt-1 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <Zap className="h-5 w-5 text-primary" />
@@ -118,7 +118,7 @@ export default function Home() {
                     <p className="text-gray-400">Recibe notificaciones instantáneas cuando un vehículo que coincide con tus preferencias entra al inventario.</p>
                   </div>
                 </div>
-                
+
                 <div className="flex gap-4">
                   <div className="mt-1 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <Target className="h-5 w-5 text-primary" />
@@ -131,9 +131,9 @@ export default function Home() {
               </div>
             </div>
             <div className="relative h-[600px] w-full rounded-2xl overflow-hidden glass p-2">
-               <img 
-                src="https://images.unsplash.com/photo-1555215695-3004980ad54e?q=80&w=2940&auto=format&fit=crop" 
-                alt="BMW Dashboard Preview" 
+               <img
+                src="https://images.unsplash.com/photo-1555215695-3004980ad54e?q=80&w=2940&auto=format&fit=crop"
+                alt="BMW Dashboard Preview"
                 className="w-full h-full object-cover rounded-xl opacity-80"
               />
               <div className="absolute inset-0 bg-gradient-to-tr from-[#050505]/80 to-transparent"></div>
@@ -143,10 +143,7 @@ export default function Home() {
                      <p className="text-sm text-primary font-bold">GANANCIA ESTIMADA</p>
                      <p className="text-2xl font-bold text-white">$4,250.00</p>
                    </div>
-                   <div className="text-right">
-                     <p className="text-sm text-gray-400">Nivel de Riesgo</p>
-                     <p className="text-green-400 font-bold">BAJO</p>
-                   </div>
+
                  </div>
                  <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
                    <div className="bg-primary h-full w-[75%]"></div>
@@ -236,12 +233,12 @@ export default function Home() {
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Suscripción Premium</h2>
             <p className="text-gray-400 max-w-2xl mx-auto">Un único plan con acceso total a todas las herramientas de la plataforma.</p>
           </div>
-          
+
           <div className="max-w-lg mx-auto glass rounded-3xl p-8 border border-primary/30 relative">
             <div className="absolute top-0 right-8 transform -translate-y-1/2">
               <span className="bg-primary text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Más Popular</span>
             </div>
-            
+
             <div className="mb-8">
               <h3 className="text-2xl font-bold mb-2">Pro Access</h3>
               <div className="flex items-baseline gap-2">
@@ -250,7 +247,7 @@ export default function Home() {
               </div>
               <p className="text-gray-400 mt-4">Acceso ilimitado al inventario privado de vehículos y herramientas de análisis.</p>
             </div>
-            
+
             <ul className="space-y-4 mb-8">
               {[
                 'Acceso a todo el inventario de vehículos',
@@ -266,7 +263,7 @@ export default function Home() {
                 </li>
               ))}
             </ul>
-            
+
             <Link href="/register?plan=pro" className="block w-full bg-white text-black hover:bg-gray-200 text-center py-4 rounded-xl font-bold transition-colors">
               Comenzar Ahora
             </Link>
@@ -280,7 +277,7 @@ export default function Home() {
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Preguntas Frecuentes</h2>
           </div>
-          
+
           <div className="space-y-4">
             {[
               {
@@ -311,7 +308,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-      
+
       <Footer />
     </main>
   );

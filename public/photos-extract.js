@@ -136,25 +136,25 @@
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'manheim-con-fotos.json';
+    a.download = 'fotos.json';
     a.click();
     console.table(data.slice(0, 30));
     alert(`Listo: ${data.length} fotos confiables para ${pairs.size} VINs.`);
   }
 
   function updatePanel() {
-    const el = document.getElementById('abp-manheim-count');
+    const el = document.getElementById('abp-photos-count');
     if (el) el.textContent = `${pairs.size} VINs / ${output().length} fotos`;
   }
 
   function installPanel() {
-    if (document.getElementById('abp-manheim-panel')) return;
+    if (document.getElementById('abp-photos-panel')) return;
     const panel = document.createElement('div');
-    panel.id = 'abp-manheim-panel';
+    panel.id = 'abp-photos-panel';
     panel.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:999999;background:#050505;color:white;border:1px solid #22c55e;border-radius:12px;padding:12px;font:14px Arial;box-shadow:0 10px 30px rgba(0,0,0,.4);max-width:320px';
     panel.innerHTML = `
       <div style="font-weight:700;margin-bottom:6px">Auto Bid Pro - Extractor de Fotos</div>
-      <div id="abp-manheim-count" style="color:#22c55e;margin-bottom:10px">0 VINs / 0 fotos</div>
+      <div id="abp-photos-count" style="color:#22c55e;margin-bottom:10px">0 VINs / 0 fotos</div>
       <button id="abp-capture" style="background:#2563eb;color:white;border:0;border-radius:8px;padding:8px 10px;margin-right:6px;cursor:pointer">Capturar esta página</button>
       <button id="abp-download" style="background:#22c55e;color:white;border:0;border-radius:8px;padding:8px 10px;cursor:pointer">Descargar JSON</button>
       <div style="color:#aaa;font-size:12px;margin-top:8px">Si no avanza solo, avanza de página y luego "Capturar esta página".</div>

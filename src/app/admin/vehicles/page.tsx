@@ -70,7 +70,7 @@ export default async function AdminVehiclesPage({ searchParams }: { searchParams
                     </div>
                     <div>
                       <p className="font-bold">{vehicle.year} {vehicle.brand} {vehicle.model}</p>
-                      <p className="text-xs text-gray-500">{vehicle.location}</p>
+                      <p className="text-xs text-gray-500">Puerto Rico</p>
                     </div>
                   </td>
                   <td className="p-4 text-sm font-mono text-gray-400">

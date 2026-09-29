@@ -21,11 +21,11 @@ export default function AdminLayout({
   ];
 
   return (
-    <div className="min-h-screen bg-[#050505] flex">
-      <aside className="w-64 glass border-r border-white/5 hidden md:flex flex-col sticky top-0 h-screen">
+    <div className="min-h-screen bg-[#050505] flex print:block print:bg-white">
+      <aside className="print:hidden w-64 glass border-r border-white/5 hidden md:flex flex-col sticky top-0 h-screen">
         <div className="h-20 flex items-center px-6 border-b border-white/5">
           <Link href="/admin">
-            <img src="/logo.png" alt="Auto Bid Pro" className="h-8 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
+            <img src="/logo.png" alt="Auto Bid Pro" className="h-10 w-auto object-contain" />
           </Link>
         </div>
         
@@ -58,9 +58,11 @@ export default function AdminLayout({
       </aside>
       
       <main className="flex-1 flex flex-col min-h-screen overflow-x-hidden">
-        <header className="h-20 glass border-b border-white/5 flex items-center justify-between px-8 sticky top-0 z-30">
+        <header className="print:hidden h-20 glass border-b border-white/5 flex items-center justify-between px-8 sticky top-0 z-30">
           <div className="md:hidden flex items-center gap-2">
-            <img src="/logo.png" alt="Auto Bid Pro" className="h-8 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
+            <Link href="/admin">
+              <img src="/logo.png" alt="Auto Bid Pro" className="h-10 w-auto object-contain" />
+            </Link>
           </div>
           
           <div className="hidden md:flex flex-1">
@@ -76,7 +78,7 @@ export default function AdminLayout({
           </div>
         </header>
         
-        <div className="p-8 flex-1">
+        <div className="p-8 flex-1 print:p-0">
           {children}
         </div>
       </main>

@@ -49,13 +49,6 @@ export default async function UserFavoritesPage() {
               </div>
               <div className="p-5 flex justify-between items-center">
                 <span className="text-lg font-bold">${vehicle.starting_price?.toLocaleString()}</span>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
-                  vehicle.risk_level === 'low' ? 'text-green-400 bg-green-400/10' : 
-                  vehicle.risk_level === 'medium' ? 'text-yellow-400 bg-yellow-400/10' : 
-                  'text-red-400 bg-red-400/10'
-                }`}>
-                  {vehicle.risk_level} Riesgo
-                </span>
               </div>
             </Link>
           );
