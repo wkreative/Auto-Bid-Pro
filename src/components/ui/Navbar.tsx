@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Menu, X, Car } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,10 +9,10 @@ export default function Navbar() {
   return (
     <nav className="fixed w-full z-50 glass border-b border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+        <div className="flex justify-between items-center h-24">
           <div className="flex-shrink-0">
             <Link href="/">
-              <img src="/logo.png" alt="Auto Bid Pro" className="h-12 w-auto object-contain" />
+              <img src="/logo.png" alt="Auto Bid Pro" className="h-20 w-auto max-w-[220px] object-contain" />
             </Link>
           </div>
           <div className="hidden md:flex space-x-8 items-center">

@@ -31,5 +31,41 @@ const form=new FormData(); for(const [k,v] of Object.entries({email:' Test@examp
  session={access_token:'test'};await assert.rejects(signup(form),{message:'/dashboard'});
  authError={message:'rejected'};await assert.rejects(signup(form),{message:'/register?error=true'});
  form.set('password','short');await assert.rejects(signup(form),{message:'/register?error=validation'});assert.equal(callCount,3);
+ const batchTools = load('src/lib/import-batches.ts');
+ const batchId = batchTools.createBatchId();
+ assert.ok(batchTools.isBatchId(batchId));
+ assert.equal(batchTools.isBatchId('invalid|BATCH:other'), false);
+ let stored;
+ const {POST} = load('src/app/api/admin/import/route.ts', {
+   '@/lib/import-batches': batchTools,
+   '@/lib/publication': load('src/lib/publication.ts'),
+   '@/utils/supabase/server': {createClient: async () => ({
+     auth: {getUser: async () => ({data: {user: {id:'admin'}}})},
+     from: () => ({select: () => ({eq: () => ({single: async () => ({data: {role:'admin'}})})})}),
+   })},
+   '@/utils/supabase/admin': {createAdminClient: () => ({from: () => ({insert: (rows) => {
+     stored = rows[0]; return {select: () => ({single: async () => ({data: {id:'vehicle'},error:null})})};
+   }})})},
+ });
+ const response = await POST({json: async () => ({batchId,vehicles:[{brand:'Test',model:'Car',year:2026,vin:'TEST',images:[]}]})});
+ assert.equal(response.status,200);
+ const result = await response.json();
+ assert.equal(result.batchId,batchId);
+ assert.equal(result.ok,1);
+ assert.ok(stored.internal_notes.includes(`BATCH:${batchId} |`));
+ assert.ok(stored.description.includes(`[${batchId}]`));
+ const ranges=[];
+ const rows=[...Array.from({length:1001},()=>({internal_notes:`BATCH:${batchId} | Puerto Rico`})),{internal_notes:'BATCH:MAN-PR-2025-01-01-ABCD | old'},{internal_notes:'unrelated'}];
+ const query={select:()=>query,not:()=>query,order:()=>query,range:async(a,b)=>{ranges.push([a,b]);return {data:rows.slice(a,b+1),error:null};}};
+ const list=await batchTools.listImportBatches({from:()=>query});
+ assert.deepEqual(ranges,[[0,999],[1000,1999]]);
+ assert.deepEqual(list,[{batch:batchId,count:1001},{batch:'MAN-PR-2025-01-01-ABCD',count:1}]);
+ query.range=async()=>({data:null,error:new Error('database unavailable')});
+ await assert.rejects(batchTools.listImportBatches({from:()=>query}),/database unavailable/);
+ const ImportVehicles=load('src/components/admin/ImportVehicles.tsx',{'@/lib/import-batches':batchTools}).default;
+ const importHtml=renderToStaticMarkup(React.createElement(ImportVehicles,{initialBatchId:batchId}));
+ assert.ok(importHtml.includes(batchId));
+ assert.ok(importHtml.includes('Lotes importados'));
+ console.log('PASS: import uses and persists the displayed batch ID; counts across database pages; legacy batches; database errors; initial batch rendering.');
  console.log('PASS: calculator parsing, rendered totals/profit/ROI/break-even, zero investment; signup validation, normalization, confirmation, session and error paths.');
 })().catch(e=>{console.error(e);process.exitCode=1});

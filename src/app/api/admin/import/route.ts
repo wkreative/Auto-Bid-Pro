@@ -1,3 +1,4 @@
+import { createBatchId, isBatchId } from '@/lib/import-batches';
 import { createClient } from '@/utils/supabase/server';
 import { publicationText } from '@/lib/publication';
 import { createAdminClient } from '@/utils/supabase/admin';
@@ -10,12 +11,13 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Inicia sesión' }, { status: 401 });
     const { data: profile } = await client.from('profiles').select('role').eq('id', user.id).single();
     if (profile?.role !== 'admin') return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
-    const { vehicles } = await req.json();
+    const { vehicles, batchId: requestedBatchId } = await req.json();
+    if (requestedBatchId !== undefined && !isBatchId(requestedBatchId)) return NextResponse.json({ error: 'Número de lote inválido' }, { status: 400 });
     if (!vehicles || !Array.isArray(vehicles)) return NextResponse.json({ error: 'vehicles required' }, { status: 400 });
     const supabase = createAdminClient();
     let ok = 0, fail = 0;
     const errs: string[] = [];
-    const batchId = `LOT-PR-${new Date().toISOString().slice(0,10)}-${Math.random().toString(36).slice(2,6).toUpperCase()}`;
+    const batchId = requestedBatchId ?? createBatchId();
     for (const v of vehicles) {
       try {
         const descBase = v.description ? `${v.description} | ` : '';
