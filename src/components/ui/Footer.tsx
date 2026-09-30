@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Phone, MapPin } from 'lucide-react';
+import { Phone, MapPin, Mail } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -40,16 +40,16 @@ export default function Footer() {
             <h3 className="text-white font-semibold mb-6">Contacto</h3>
             <ul className="space-y-4">
               <li className="flex items-center gap-3 text-sm text-gray-400">
-                <Phone className="h-4 w-4 text-primary" />
-                <a href="tel:+17872092995" className="hover:text-white transition-colors">787-209-2995</a>
+                <MapPin className="h-4 w-4 shrink-0 text-primary" />
+                Vega Alta PR
               </li>
               <li className="flex items-center gap-3 text-sm text-gray-400">
-                <Phone className="h-4 w-4 text-primary" />
-                <a href="tel:+17879705012" className="hover:text-white transition-colors">787-970-5012</a>
+                <Mail className="h-4 w-4 shrink-0 text-primary" />
+                <a href="mailto:Autobrokerprllc@gmail.com" className="min-w-0 break-words hover:text-white transition-colors">Autobrokerprllc@gmail.com</a>
               </li>
               <li className="flex items-center gap-3 text-sm text-gray-400">
-                <MapPin className="h-4 w-4 text-primary" />
-                Puerto Rico
+                <Phone className="h-4 w-4 shrink-0 text-primary" />
+                <a href="tel:+17872092995" className="hover:text-white transition-colors">(787) 209-2995</a>
               </li>
             </ul>
           </div>
