@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Suspense } from 'react';
-import { Car, LayoutDashboard, Search, Heart, Bell, Settings, LogOut } from 'lucide-react';
+import { User, LayoutDashboard, Search, Heart, Bell, Settings, LogOut } from 'lucide-react';
 import DashboardSearch from '@/components/ui/DashboardSearch';
 
 export default function DashboardLayout({
@@ -74,13 +74,12 @@ export default function DashboardLayout({
           </div>
           
           <div className="flex items-center gap-4">
-            <button className="relative p-2 text-gray-400 hover:text-white transition-colors">
+            <Link href="/dashboard/alerts" aria-label="Ver notificaciones" className="relative p-2 text-gray-400 hover:text-white transition-colors">
               <Bell className="h-6 w-6" />
-              <span className="absolute top-1 right-1 h-2 w-2 bg-primary rounded-full"></span>
-            </button>
-            <div className="h-10 w-10 rounded-full bg-gradient-to-r from-primary to-blue-600 flex items-center justify-center font-bold">
-              JD
-            </div>
+            </Link>
+            <Link href="/dashboard/settings" aria-label="Ver mi perfil" className="h-10 w-10 rounded-full bg-gradient-to-r from-primary to-blue-600 flex items-center justify-center font-bold">
+              <User className="h-5 w-5" />
+            </Link>
           </div>
         </header>
         

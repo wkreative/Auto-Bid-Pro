@@ -16,9 +16,9 @@ export default function Navbar() {
             </Link>
           </div>
           <div className="hidden md:flex space-x-8 items-center">
-            <Link href="#how-it-works" className="text-gray-300 hover:text-white transition-colors">Cómo Funciona</Link>
-            <Link href="#benefits" className="text-gray-300 hover:text-white transition-colors">Beneficios</Link>
-            <Link href="#pricing" className="text-gray-300 hover:text-white transition-colors">Planes</Link>
+            <Link href="/#how-it-works" className="text-gray-300 hover:text-white transition-colors">Cómo Funciona</Link>
+            <Link href="/#benefits" className="text-gray-300 hover:text-white transition-colors">Beneficios</Link>
+            <Link href="/#pricing" className="text-gray-300 hover:text-white transition-colors">Planes</Link>
             <div className="h-6 w-px bg-gray-700"></div>
             <Link href="/login" className="text-gray-300 hover:text-white font-medium">Ingresar</Link>
             <Link href="/register" className="bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-full font-medium transition-all duration-200 shadow-[0_0_15px_rgba(14,165,233,0.3)]">
@@ -37,9 +37,9 @@ export default function Navbar() {
       {isOpen && (
         <div className="md:hidden glass border-t border-white/5">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 flex flex-col">
-            <Link href="#how-it-works" className="text-gray-300 hover:text-white block px-3 py-2 rounded-md">Cómo Funciona</Link>
-            <Link href="#benefits" className="text-gray-300 hover:text-white block px-3 py-2 rounded-md">Beneficios</Link>
-            <Link href="#pricing" className="text-gray-300 hover:text-white block px-3 py-2 rounded-md">Planes</Link>
+            <Link href="/#how-it-works" className="text-gray-300 hover:text-white block px-3 py-2 rounded-md">Cómo Funciona</Link>
+            <Link href="/#benefits" className="text-gray-300 hover:text-white block px-3 py-2 rounded-md">Beneficios</Link>
+            <Link href="/#pricing" className="text-gray-300 hover:text-white block px-3 py-2 rounded-md">Planes</Link>
             <Link href="/login" className="text-gray-300 hover:text-white block px-3 py-2 rounded-md">Ingresar</Link>
             <Link href="/register" className="text-primary hover:text-primary-hover block px-3 py-2 rounded-md font-bold">Crear Cuenta</Link>
           </div>

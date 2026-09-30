@@ -1,7 +1,7 @@
 import Navbar from '@/components/ui/Navbar';
 import Footer from '@/components/ui/Footer';
 import Link from 'next/link';
-import { ArrowRight, CheckCircle2, Shield, Zap, Target, Search, MousePointerClick, Car, HelpCircle, ChevronRight, CreditCard, ShoppingCart, Percent, Clock } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Shield, Zap, Target, Search, ChevronRight, CreditCard, ShoppingCart } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -51,38 +51,21 @@ export default function Home() {
             <p className="text-gray-400 max-w-2xl mx-auto">Un proceso simple, transparente y diseñado para maximizar tu rentabilidad en cada compra.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="glass p-8 rounded-2xl relative overflow-hidden group hover:border-primary/50 transition-colors duration-300">
               <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6">
                 <Search className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-bold mb-3">1. Explora el Inventario</h3>
-              <p className="text-gray-400">Accede a vehículos exclusivos con reportes detallados, fotos en alta resolución, daños visibles y costos estimados de reparación.</p>
-              <div className="absolute -bottom-10 -right-10 opacity-5 group-hover:opacity-10 transition-opacity">
-                <Search className="h-40 w-40" />
-              </div>
+              <h3 className="text-xl font-bold mb-3">Paso 1. Broker de subasta</h3>
+              <p className="text-gray-400 leading-relaxed">Somos pioneros en ofrecer el servicio de broker de subasta en Puerto Rico, brindando a nuestros clientes la oportunidad de adquirir vehículos de subasta con grandes ahorros en comparación con el mercado.</p>
+              <p className="text-gray-400 leading-relaxed mt-4">Si buscas una unidad en específico, te ayudamos a establecer un presupuesto y encontramos opciones adaptadas a tus necesidades. Además, si deseas invertir en unidades para reventa, ofrecemos el mismo servicio, gestionado directamente con los encargados de los “Resellers”.</p>
             </div>
-
             <div className="glass p-8 rounded-2xl relative overflow-hidden group hover:border-primary/50 transition-colors duration-300">
               <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6">
-                <MousePointerClick className="h-6 w-6 text-primary" />
+                <CreditCard className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-bold mb-3">2. Coloca tu Oferta</h3>
-              <p className="text-gray-400">Establece el precio máximo que estás dispuesto a pagar. Nuestro sistema calculará márgenes estimados automáticamente.</p>
-              <div className="absolute -bottom-10 -right-10 opacity-5 group-hover:opacity-10 transition-opacity">
-                <MousePointerClick className="h-40 w-40" />
-              </div>
-            </div>
-
-            <div className="glass p-8 rounded-2xl relative overflow-hidden group hover:border-primary/50 transition-colors duration-300">
-              <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6">
-                <Car className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="text-xl font-bold mb-3">3. Gana y Recibe</h3>
-              <p className="text-gray-400">Nuestros expertos negocian por ti. Si tu oferta es aprobada, gestionamos el pago y preparamos el vehículo para su entrega.</p>
-              <div className="absolute -bottom-10 -right-10 opacity-5 group-hover:opacity-10 transition-opacity">
-                <Car className="h-40 w-40" />
-              </div>
+              <h3 className="text-xl font-bold mb-3">Paso 2. Financiamiento</h3>
+              <p className="text-gray-400 leading-relaxed">¡Conoce las alternativas que tenemos disponibles en nuestro concesionario! Contamos con una gran variedad de unidades disponibles para financiamiento, brindándoles a nuestros clientes los precios más competitivos del mercado.</p>
             </div>
           </div>
         </div>
@@ -226,6 +209,37 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Purchase Costs */}
+      <section id="costs" aria-labelledby="costs-heading" className="py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 id="costs-heading" className="text-3xl md:text-4xl font-bold mb-4">Costos Auto Broker PR</h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">Conoce el costo de nuestro servicio según el monto de tu compra.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { cost: '$350', range: 'Hasta $999' },
+              { cost: '$750', range: 'Desde $1,000 hasta $4,999' },
+              { cost: '$999', range: 'Desde $5,000 hasta $14,999' },
+              { cost: '8%', range: 'Desde $15,000' },
+            ].map(({ cost, range }) => (
+              <div key={cost} className="glass p-8 rounded-2xl hover:border-primary/50 transition-colors duration-300">
+                <p className="text-sm font-medium text-primary mb-4">Costo del servicio</p>
+                <p className="text-5xl font-bold tracking-tight mb-6">{cost}</p>
+                <h3 className="text-sm text-gray-400 mb-2">Para compras</h3>
+                <p className="text-lg font-medium">{range}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-6 sm:p-8">
+            <h3 className="text-lg font-bold mb-2">Importante</h3>
+            <p className="text-gray-300">El costo por servicio de gestoría será de <span className="font-bold text-white">$350</span>.</p>
+          </div>
+        </div>
+      </section>
+
       {/* Pricing Section */}
       <section id="pricing" className="py-24 bg-[#0a0a0a]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -272,7 +286,7 @@ export default function Home() {
       </section>
 
       {/* FAQ */}
-      <section className="py-24">
+      <section id="faq" className="py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Preguntas Frecuentes</h2>

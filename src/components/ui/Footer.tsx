@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Car, Mail, Phone, MapPin } from 'lucide-react';
+import { Phone, MapPin } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -20,10 +20,10 @@ export default function Footer() {
           <div>
             <h3 className="text-white font-semibold mb-6">Plataforma</h3>
             <ul className="space-y-4">
-              <li><Link href="#how-it-works" className="text-gray-400 hover:text-white text-sm transition-colors">Cómo funciona</Link></li>
-              <li><Link href="#benefits" className="text-gray-400 hover:text-white text-sm transition-colors">Beneficios</Link></li>
-              <li><Link href="#pricing" className="text-gray-400 hover:text-white text-sm transition-colors">Planes y Precios</Link></li>
-              <li><Link href="/faq" className="text-gray-400 hover:text-white text-sm transition-colors">Preguntas Frecuentes</Link></li>
+              <li><Link href="/#how-it-works" className="text-gray-400 hover:text-white text-sm transition-colors">Cómo funciona</Link></li>
+              <li><Link href="/#benefits" className="text-gray-400 hover:text-white text-sm transition-colors">Beneficios</Link></li>
+              <li><Link href="/#pricing" className="text-gray-400 hover:text-white text-sm transition-colors">Planes y Precios</Link></li>
+              <li><Link href="/#faq" className="text-gray-400 hover:text-white text-sm transition-colors">Preguntas Frecuentes</Link></li>
             </ul>
           </div>
           
@@ -32,7 +32,7 @@ export default function Footer() {
             <ul className="space-y-4">
               <li><Link href="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">Términos de Servicio</Link></li>
               <li><Link href="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">Política de Privacidad</Link></li>
-              <li><Link href="/cookies" className="text-gray-400 hover:text-white text-sm transition-colors">Política de Cookies</Link></li>
+              <li><Link href="/privacy#cookies" className="text-gray-400 hover:text-white text-sm transition-colors">Política de Cookies</Link></li>
             </ul>
           </div>
           
@@ -40,16 +40,16 @@ export default function Footer() {
             <h3 className="text-white font-semibold mb-6">Contacto</h3>
             <ul className="space-y-4">
               <li className="flex items-center gap-3 text-sm text-gray-400">
-                <Mail className="h-4 w-4 text-primary" />
-                soporte@auctionautohub.com
+                <Phone className="h-4 w-4 text-primary" />
+                <a href="tel:+17872092995" className="hover:text-white transition-colors">787-209-2995</a>
               </li>
               <li className="flex items-center gap-3 text-sm text-gray-400">
                 <Phone className="h-4 w-4 text-primary" />
-                +1 (800) 123-4567
+                <a href="tel:+17879705012" className="hover:text-white transition-colors">787-970-5012</a>
               </li>
               <li className="flex items-center gap-3 text-sm text-gray-400">
                 <MapPin className="h-4 w-4 text-primary" />
-                Miami, Florida, USA
+                Puerto Rico
               </li>
             </ul>
           </div>
