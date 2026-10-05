@@ -9,13 +9,30 @@ function load(file, mocks = {}) {
  new Function('require','module','exports',code)(name => name in mocks ? mocks[name] : dependency(name),loaded,loaded.exports);
  return loaded.exports;
 }
-const {parseAmount} = load('src/lib/calculator.ts');
+const calculatorTools = load('src/lib/calculator.ts');
+const {parseAmount, brokerFee, auctionCosts, maximumOffer} = calculatorTools;
+for (const [price, fee] of [[0,0],[-1,0],[999,350],[999.99,350],[1000,750],[4999.99,750],[5000,999],[14999.99,999],[15000,1200],[20000,1600]]) {
+  assert.equal(brokerFee(price),fee,`Broker fee for ${price}`);
+}
+assert.deepEqual(auctionCosts(10000),{broker:999,paperwork:350,paymentCharge:400,total:11749});
+assert.deepEqual(auctionCosts(10000,100,true),{broker:999,paperwork:350,paymentCharge:0,total:11449});
+assert.equal(auctionCosts(15000).total,17150);
+assert.equal(auctionCosts(999).total,1738.96);
+assert.equal(auctionCosts(0).total,0);
+for(const discounted of [false,true]) {
+  for(const price of [999.99,1000,4999.99,5000,14999.99,15000,20000]) {
+    const budget = auctionCosts(price,123,discounted).total;
+    const maximum = maximumOffer(budget,123,discounted);
+    assert.equal(maximum,price);
+    assert.ok(auctionCosts(maximum+0.01,123,discounted).total > budget);
+  }
+}
 for (const [input, expected] of [['1,250.50',1250.5],['',0],['.',0],['1.2.3',0],['Infinity',0],[-5,0],['15000',15000]]) assert.equal(parseAmount(input),expected);
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-const Calculator=load('src/components/ResaleCalculator.tsx',{'@/lib/calculator':{parseAmount}}).default;
+const Calculator=load('src/components/ResaleCalculator.tsx',{'@/lib/calculator':calculatorTools}).default;
 let html=renderToStaticMarkup(React.createElement(Calculator,{startingPrice:10000,estimatedRepairCost:1250.50,estimatedResaleValue:15000}));
-for(const value of ['$10,000.00','$5,000.00','$15,000.00','+50.0%']) assert.ok(html.includes(value),value);
+for(const value of ['$11,749.00','$3,251.00','$15,000.00','+27.7%']) assert.ok(html.includes(value),value);
 assert.ok(!html.includes('Reparaci'));
 assert.ok(!html.includes('readOnly'));
 html=renderToStaticMarkup(React.createElement(Calculator,{startingPrice:0,estimatedRepairCost:0,estimatedResaleValue:500}));
@@ -23,7 +40,7 @@ assert.ok(!html.includes('NaN')&&!html.includes('Infinity'));
 const calculatorState = [];
 let stateIndex = 0;
 const InteractiveCalculator = load('src/components/ResaleCalculator.tsx', {
-  '@/lib/calculator': {parseAmount},
+  '@/lib/calculator': calculatorTools,
   react: {...React, useState(initial) {
     const index = stateIndex++;
     if (!(index in calculatorState)) calculatorState[index] = initial;
@@ -34,23 +51,29 @@ function calculatorTree() {
   stateIndex = 0;
   return InteractiveCalculator({startingPrice:10000,estimatedResaleValue:15000});
 }
-function findBidInput(node) {
+function findBidInput(node, id = 'auction-bid-amount') {
   if (!node || typeof node !== 'object') return;
-  if (node.props?.id === 'auction-bid-amount') return node;
+  if (node.props?.id === id) return node;
   for (const child of React.Children.toArray(node.props?.children)) {
-    const found = findBidInput(child);
+    const found = findBidInput(child, id);
     if (found) return found;
   }
 }
 for (const [amount, total, profit, roi] of [
-  ['8,000.50','$8,000.50','$6,999.50','+87.5%'],
-  ['12000','$12,000.00','$3,000.00','+25.0%'],
+  ['8,000.50','$9,669.52','$5,330.48','+55.1%'],
+  ['12000','$13,829.00','$1,171.00','+8.5%'],
   ['', '$0.00', '$15,000.00', '+0.0%'],
 ]) {
   findBidInput(calculatorTree()).props.onChange({target:{value:amount}});
   const result = renderToStaticMarkup(calculatorTree());
   for (const expected of [total,profit,roi]) assert.ok(result.includes(expected),expected);
 }
+findBidInput(calculatorTree()).props.onChange({target:{value:'10000'}});
+findBidInput(calculatorTree(),'auction-payment').props.onChange({target:{value:'discounted'}});
+const discountedHtml=renderToStaticMarkup(calculatorTree());
+assert.ok(discountedHtml.includes('$11,349.00'));
+assert.ok(discountedHtml.includes('$3,651.00'));
+assert.ok(discountedHtml.includes('$0.00'));
 let callCount=0, session=null, authError=null, payload;
 const {signup}=load('src/app/register/actions.ts',{
  'next/cache':{revalidatePath(){}}, 'next/navigation':{redirect(url){throw new Error(url)}},

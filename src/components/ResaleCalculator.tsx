@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { parseAmount } from '@/lib/calculator';
+import { parseAmount, auctionCosts, maximumOffer } from '@/lib/calculator';
 import { Calculator, DollarSign, TrendingUp, ArrowUpRight } from 'lucide-react';
 
 interface ResaleCalculatorProps {
@@ -13,10 +13,12 @@ export default function ResaleCalculator({ startingPrice, estimatedResaleValue }
   const [bidAmount, setBidAmount] = useState<string>(String(startingPrice));
   const [otherCosts, setOtherCosts] = useState<string>('');
   const [userResaleValue, setUserResaleValue] = useState<string>(estimatedResaleValue ? String(estimatedResaleValue) : '');
+  const [discountedPayment, setDiscountedPayment] = useState(false);
 
   const numOther = parseAmount(otherCosts);
   const numResale = parseAmount(userResaleValue);
-  const totalInvestment = parseAmount(bidAmount) + numOther;
+  const costs = auctionCosts(parseAmount(bidAmount), numOther, discountedPayment);
+  const totalInvestment = costs.total;
   const resaleValue = numResale;
   const potentialProfit = resaleValue - totalInvestment;
   const roi = totalInvestment > 0 ? ((potentialProfit / totalInvestment) * 100) : 0;
@@ -67,7 +69,7 @@ export default function ResaleCalculator({ startingPrice, estimatedResaleValue }
 
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-            <DollarSign className="h-4 w-4" /> Otros Costos (Transporte, Impuestos, Tasas, etc.)
+            <DollarSign className="h-4 w-4" /> Otros Costos (Transporte, etc.)
           </label>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
@@ -82,6 +84,20 @@ export default function ResaleCalculator({ startingPrice, estimatedResaleValue }
               className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-3 pl-8 pr-4 text-lg font-bold text-white focus:outline-none focus:border-primary transition-colors"
             />
           </div>
+        </div>
+
+        <div className="space-y-3 rounded-xl bg-white/5 p-4">
+          <label htmlFor="auction-payment" className="block text-sm font-medium text-gray-300">Método de pago</label>
+          <select id="auction-payment" value={discountedPayment ? 'discounted' : 'standard'} onChange={e => setDiscountedPayment(e.target.value === 'discounted')} className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl p-3 text-white">
+            <option value="standard">Pago con cargo del 4%</option>
+            <option value="discounted">Cheque de gerente, depósito o efectivo (sin el 4%)</option>
+          </select>
+          <dl className="space-y-2 text-sm">
+            <div className="flex justify-between gap-2"><dt>Broker fee</dt><dd>{formatCurrency(costs.broker)}</dd></div>
+            <div className="flex justify-between gap-2"><dt>Gestoría</dt><dd>{formatCurrency(costs.paperwork)}</dd></div>
+            <div className="flex justify-between gap-2"><dt>Cargo del 4% sobre el vehículo</dt><dd>{formatCurrency(costs.paymentCharge)}</dd></div>
+          </dl>
+          <p className="text-xs text-gray-400">Gestoría: $350 por compra. Broker fee: $350 para precios menores de $1,000; $750 desde $1,000; $999 desde $5,000; 8% desde $15,000. Estos cargos ya están incluidos en el total.</p>
         </div>
 
         <div>
@@ -116,7 +132,7 @@ export default function ResaleCalculator({ startingPrice, estimatedResaleValue }
             <div className="bg-white/5 p-4 rounded-xl border border-white/5">
               <p className="text-sm text-gray-400">Inversión Total</p>
               <p className="text-2xl font-bold text-white">{formatCurrency(totalInvestment)}</p>
-              <p className="text-xs text-gray-500 mt-1">Tu oferta + Otros costos</p>
+              <p className="text-xs text-gray-500 mt-1">Tu oferta + Broker fee + Gestoría + Cargo de pago + Otros costos</p>
             </div>
             <div className="bg-white/5 p-4 rounded-xl border border-white/5">
               <p className="text-sm text-gray-400">Valor de Reventa</p>
@@ -140,7 +156,7 @@ export default function ResaleCalculator({ startingPrice, estimatedResaleValue }
             <div className="bg-primary/10 border border-primary/20 p-4 rounded-xl">
               <p className="text-sm text-primary/80 flex items-center gap-2">
                 <ArrowUpRight className="h-4 w-4" />
-                <strong>Precio Máximo de Oferta Sugerido:</strong> {formatCurrency(resaleValue - numOther)}
+                <strong>Precio Máximo de Oferta Sugerido:</strong> {formatCurrency(maximumOffer(resaleValue, numOther, discountedPayment))}
                 <span className="text-xs ml-2 text-gray-500">(para break-even)</span>
               </p>
             </div>
