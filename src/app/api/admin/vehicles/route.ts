@@ -8,8 +8,11 @@ export async function POST(req: Request) {
     const client = await createClient();
     const { data: { user }, error: authError } = await client.auth.getUser();
     if (authError || !user) return NextResponse.json({ error: 'Inicia sesión' }, { status: 401 });
-    const { data: profile, error: profileError } = await client.from('profiles').select('role').eq('id', user.id).single();
-    if (profileError || profile?.role !== 'admin') return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    // Read the verified user's role on the server so profile RLS cannot hide it.
+    const admin = createAdminClient();
+    const { data: profile, error: profileError } = await admin.from('profiles').select('role').eq('id', user.id).single();
+    if (profileError) return NextResponse.json({ error: 'No se pudieron verificar tus permisos. Inténtalo nuevamente.' }, { status: 503 });
+    if (profile?.role !== 'admin') return NextResponse.json({ error: 'Solo una cuenta administradora puede subir vehículos.' }, { status: 403 });
 
     const input = await req.json();
     if (!input || Array.isArray(input) ||
@@ -26,7 +29,7 @@ export async function POST(req: Request) {
 
     // Only accept fields from the individual form; privileged credentials stay on the server.
     const auction = input.sale_type === 'auction';
-    const { data, error } = await createAdminClient().from('vehicles').insert([{
+    const { data, error } = await admin.from('vehicles').insert([{
       brand: input.brand, model: input.model, vin: input.vin,
       year: input.year, mileage: input.mileage, location: 'Puerto Rico',
       sale_type: input.sale_type, status: input.status,

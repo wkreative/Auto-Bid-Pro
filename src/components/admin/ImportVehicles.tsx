@@ -21,7 +21,10 @@ function parseCSV(text: string): ParsedVehicle[] {
   return lines.slice(1).map(l => { const c = parseCSVLine(l, delim); const vin = (c[iVin] || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 17); const grade = c[iGrade]||''; const seller = c[iSeller]||''; const auction = c[iAuction]||''; const comments = c[iSellerComments]||''; const notes = c[iNotes]||''; const descParts = []; if(grade) descParts.push(`Condición: ${grade}/5`); if(seller) descParts.push(`Vendedor: ${seller}`); if(auction) descParts.push(`Casa: ${auction}`); if(comments) descParts.push(`Comentarios: ${comments}`); if(notes) descParts.push(`Notas: ${notes}`); return { brand: c[iMake] || 'N/A', model: c[iModel] || 'N/A', year: parseInt(c[iYear]) || 2020, vin, mileage: parseInt((c[iOdo] || '0').replace(/[^0-9]/g, '')) || 0, location: 'Puerto Rico', starting_price: parseFloat((c[iPrice] || '1000').replace(/[^0-9.]/g, '')) || 1000, images: [], trim: c[iTrim], exterior_color: c[iColor], description: descParts.join(' | ') }; }).filter(v => v.vin.length >= 5);
 }
 
-const SCRIPT = `fetch('https://auto-bid-pro-theta.vercel.app/photos-extract.js?t=${Date.now()}').then(r=>r.text()).then(eval)`;
+const SCRIPT = `fetch('https://auto-bid-pro-theta.vercel.app/photos-extract.js?t=' + Date.now())
+  .then(r => { if (!r.ok) throw new Error('No se pudo cargar el extractor'); return r.text(); })
+  .then(code => (0, eval)(code))
+  .catch(error => alert('No se pudo iniciar el extractor: ' + error.message));`;
 
 export default function ImportVehicles({ initialBatchId }: { initialBatchId: string }) {
   const [csvVehicles, setCsvVehicles] = useState<ParsedVehicle[] | null>(null);
@@ -91,7 +94,15 @@ export default function ImportVehicles({ initialBatchId }: { initialBatchId: str
   };
   const vehicles = csvVehicles ? merged : [];
 
-  const copyScript = async () => { await navigator.clipboard.writeText(SCRIPT); setCopied(true); setTimeout(()=>setCopied(false),2000); };
+  const copyScript = async () => {
+    try {
+      await navigator.clipboard.writeText(SCRIPT);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      alert('No se pudo copiar automáticamente. Selecciona y copia el código que aparece debajo del botón.');
+    }
+  };
   const deleteBatch = async (batch: string) => {
     if(!confirm(`¿Eliminar todo el lote ${batch}? Se borrarán todos los vehículos de ese grupo.`)) return;
     const res = await fetch('/api/admin/delete-batch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ batch }) });
@@ -132,15 +143,22 @@ export default function ImportVehicles({ initialBatchId }: { initialBatchId: str
       )}
 
       <div className="glass p-6 rounded-2xl border border-white/5 mb-6">
-        <h2 className="font-bold mb-2">📋 Instrucciones para importación:</h2>
+        <h2 className="font-bold mb-2">📋 Instrucciones detalladas para importar desde Manheim</h2>
         <ol className="list-decimal pl-5 space-y-2 text-sm text-gray-300">
-          <li><b>Descarga el CSV</b> del sistema de subasta → guarda tu archivo <b>.csv</b></li>
-          <li><b>Descarga las fotos:</b> usa el extractor de fotos automático o la consola para generar el archivo <b>fotos.json</b></li>
-          <li><b>Súbelos aquí:</b> selecciona primero el archivo <b>.csv</b> y luego el <b>fotos.json</b> → Verás la vista previa → Presiona <b>Importar</b></li>
+          <li><b>Entra a Manheim:</b> inicia sesión con tu usuario y código SMS en <b>search.manheim.com</b>. Abre tu búsqueda de vehículos y verifica el filtro de <b>Puerto Rico</b>.</li>
+          <li><b>Exporta los vehículos:</b> en la búsqueda selecciona <b>Export → Export to CSV</b> y guarda <b>Export.csv</b>. Usa la misma búsqueda para capturar las fotos.</li>
+          <li><b>Prepara la captura:</b> vuelve a la primera página de resultados y desplázate hacia abajo para cargar los vehículos y sus fotos. Haz clic en <b>Copiar script para consola</b> aquí.</li>
+          <li><b>Abre la consola en la pestaña de Manheim:</b> presiona <b>F12</b> (o <b>Ctrl + Shift + J</b>) y selecciona <b>Console / Consola</b>. Pega el código y presiona <b>Enter</b>. Si el navegador bloquea el pegado y te pide confirmarlo, revisa el código de abajo y escribe <b>allow pasting</b> solo si reconoces este extractor; luego pega el código.</li>
+          <li><b>Captura todas las páginas:</b> espera a que el extractor termine. Aparecerá el panel <b>Auto Bid Pro - Extractor de Fotos</b> con el número de VINs y fotos. Intenta avanzar automáticamente hasta 20 páginas. Si no avanza o quedan resultados, pasa manualmente a la siguiente página y pulsa <b>Capturar esta página</b>; espera antes de repetir. Mantén la misma pestaña sin recargar para conservar las fotos capturadas.</li>
+          <li><b>Guarda las fotos:</b> al terminar pulsa <b>Descargar JSON</b> en el panel. Se guardará <b>fotos.json</b>; si ya se descargó automáticamente, usa la descarga más reciente después de capturar todas las páginas. Si marca 0 fotos, confirma que los resultados y sus imágenes estén cargados y vuelve a capturar.</li>
+          <li><b>Sube ambos archivos aquí:</b> selecciona <b>Export.csv</b> en <b>1. Archivo CSV</b> y <b>fotos.json</b> en <b>2. Fotos JSON</b>. Revisa la vista previa y el número de fotos por vehículo. Se vinculan por VIN y se importan hasta 8 fotos por vehículo.</li>
+          <li><b>Importa y verifica:</b> pulsa <b>Importar</b> y espera el resultado sin cerrar la página. Revisa cualquier error y pulsa <b>Ver inventario publicado</b>. Guarda el número de lote para identificar esta carga.</li>
         </ol>
         <div className="mt-4 flex items-center gap-2">
-          <button onClick={copyScript} className="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2"><Copy className="h-4 w-4" /> {copied ? '¡Copiado!' : 'Copiar script de fotos'}</button>
+          <button type="button" onClick={copyScript} className="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2"><Copy className="h-4 w-4" /> {copied ? '¡Copiado!' : 'Copiar script para consola'}</button>
         </div>
+        <p className="text-xs text-gray-400 mt-3">Pega este código en la consola de Manheim. También puedes seleccionarlo y copiarlo manualmente.</p>
+        <pre className="mt-2 p-4 bg-black/40 rounded-xl text-xs text-gray-200 overflow-x-auto whitespace-pre-wrap break-all"><code>{SCRIPT}</code></pre>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4 mb-6">

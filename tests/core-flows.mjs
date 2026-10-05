@@ -99,6 +99,11 @@ const form=new FormData(); for(const [k,v] of Object.entries({email:' Test@examp
  const importHtml=renderToStaticMarkup(React.createElement(ImportVehicles,{initialBatchId:batchId}));
  assert.ok(importHtml.includes(batchId));
  assert.ok(importHtml.includes('Lotes importados'));
+ for (const instruction of ['search.manheim.com', 'Export → Export to CSV', 'F12', 'allow pasting', 'Capturar esta página', 'Descargar JSON', 'fotos.json', 'Copiar script para consola', 'photos-extract.js']) {
+   assert.ok(importHtml.includes(instruction), instruction);
+ }
+ const config = load('next.config.ts').default;
+ assert.deepEqual(await config.headers(), [{source:'/photos-extract.js',headers:[{key:'Access-Control-Allow-Origin',value:'*'}]}]);
  console.log('PASS: import uses and persists the displayed batch ID; counts across database pages; legacy batches; database errors; initial batch rendering.');
  console.log('PASS: calculator parsing, rendered totals/profit/ROI/break-even, zero investment; signup validation, normalization, confirmation, session and error paths.');
  let user = null, role = 'admin', profileError = null, dbError = null, writes = 0;
@@ -106,11 +111,17 @@ const form=new FormData(); for(const [k,v] of Object.entries({email:' Test@examp
    '@/lib/publication': load('src/lib/publication.ts'),
    '@/utils/supabase/server': {createClient: async () => ({
      auth: {getUser: async () => ({data: {user}})},
-     from: () => ({select: () => ({eq: () => ({single: async () => ({data: {role}, error: profileError})})})}),
+     from: () => { throw new Error('Session profile reads must not gate administrator access'); },
    })},
    '@/utils/supabase/admin': {createAdminClient: () => {
-     writes++;
-     return {from: () => ({insert: rows => {
+     assert.ok(user, 'Verify session before accessing the admin client');
+     return {from: table => table === 'profiles' ? {
+       select: () => ({eq: (column, id) => {
+         assert.equal(column, 'id'); assert.equal(id, user.id);
+         return {single: async () => ({data: role ? {role} : null, error: profileError})};
+       }}),
+     } : ({insert: rows => {
+       writes++;
        stored = rows[0];
        return {select: () => ({single: async () => ({data: dbError ? null : {id:'new-vehicle'},error:dbError})})};
      }})};
@@ -123,8 +134,10 @@ const form=new FormData(); for(const [k,v] of Object.entries({email:' Test@examp
  assert.equal((await requestVehicle()).status,401);
  user = {id:'admin'}; role = 'user';
  assert.equal((await requestVehicle()).status,403);
- role = 'admin'; profileError = {message:'unavailable'};
+ role = null;
  assert.equal((await requestVehicle()).status,403);
+ role = 'admin'; profileError = {message:'unavailable'};
+ assert.equal((await requestVehicle()).status,503);
  profileError = null;
  assert.equal((await requestVehicle({...vehicleInput,year:null})).status,400);
  assert.equal(writes,0);
