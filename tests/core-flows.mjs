@@ -69,15 +69,28 @@ const form=new FormData(); for(const [k,v] of Object.entries({email:' Test@examp
  assert.ok(batchTools.isBatchId(batchId));
  assert.equal(batchTools.isBatchId('invalid|BATCH:other'), false);
  let stored;
+ let importUser = {id:'admin'}, importRole = 'admin', importProfileError = null, importWrites = 0;
+ const importedPhotos = [], uploadedPhotos = [];
  const {POST} = load('src/app/api/admin/import/route.ts', {
    '@/lib/import-batches': batchTools,
    '@/lib/publication': load('src/lib/publication.ts'),
    '@/utils/supabase/server': {createClient: async () => ({
-     auth: {getUser: async () => ({data: {user: {id:'admin'}}})},
-     from: () => ({select: () => ({eq: () => ({single: async () => ({data: {role:'admin'}})})})}),
+     auth: {getUser: async () => ({data: {user: importUser}})},
+     from: () => { throw new Error('Do not read admin roles through session RLS'); },
    })},
-   '@/utils/supabase/admin': {createAdminClient: () => ({from: () => ({insert: (rows) => {
-     stored = rows[0]; return {select: () => ({single: async () => ({data: {id:'vehicle'},error:null})})};
+   '@/utils/supabase/admin': {createAdminClient: () => ({
+     storage: {from: () => ({
+       upload: async path => { uploadedPhotos.push(path); return {error:null}; },
+       getPublicUrl: path => ({data:{publicUrl:`https://storage.example/${path}`}}),
+     })},
+     from: table => table === 'profiles' ? {
+     select: () => ({eq: (column, id) => {
+       assert.equal(column,'id'); assert.equal(id,importUser.id);
+       return {single: async () => ({data: {role:importRole},error:importProfileError})};
+     }}),
+   } : table === 'vehicle_images' ? {insert: async rows => {importedPhotos.push(...rows);return {error:null};}} : ({insert: (rows) => {
+     importWrites++;
+     stored = rows[0]; return {select: () => ({single: async () => ({data: {id:`vehicle-${importWrites}`},error:null})})};
    }})})},
  });
  const response = await POST({json: async () => ({batchId,vehicles:[{brand:'Test',model:'Car',year:2026,vin:'TEST',images:[]}]})});
@@ -87,6 +100,29 @@ const form=new FormData(); for(const [k,v] of Object.entries({email:' Test@examp
  assert.equal(result.ok,1);
  assert.ok(stored.internal_notes.includes(`BATCH:${batchId} |`));
  assert.ok(stored.description.includes(`[${batchId}]`));
+ const importRequest = {json: async () => ({batchId,vehicles:[{vin:'TEST',images:[]}]})};
+ importUser = null;
+ assert.equal((await POST(importRequest)).status,401);
+ importUser = {id:'admin'}; importRole = 'user';
+ assert.equal((await POST(importRequest)).status,403);
+ importRole = 'admin'; importProfileError = {message:'unavailable'};
+ assert.equal((await POST(importRequest)).status,503);
+ assert.equal(importWrites,1);
+ importProfileError = null;
+ const originalFetch = globalThis.fetch;
+ try {
+   globalThis.fetch = async () => ({ok:true,arrayBuffer:async()=>new Uint8Array([1,2,3]).buffer});
+   const batchResponse = await POST({json:async()=>({batchId,vehicles:Array.from({length:74},(_,index)=>({
+     brand:'Test',model:'Car',year:2026,vin:`TEST${index}`,images:[`https://photos.example/${index}.jpg`],
+   }))})});
+   const batchResult = await batchResponse.json();
+   assert.equal(batchResult.ok,74); assert.equal(batchResult.fail,0); assert.deepEqual(batchResult.errs,[]);
+   assert.equal(importedPhotos.length,74); assert.equal(uploadedPhotos.length,74);
+   for(let index=0;index<74;index++) {
+     assert.equal(importedPhotos[index].vehicle_id,`vehicle-${index+2}`);
+     assert.ok(importedPhotos[index].url.includes(`/vehicle-${index+2}/images/`));
+   }
+ } finally {globalThis.fetch = originalFetch;}
  const ranges=[];
  const rows=[...Array.from({length:1001},()=>({internal_notes:`BATCH:${batchId} | Puerto Rico`})),{internal_notes:'BATCH:MAN-PR-2025-01-01-ABCD | old'},{internal_notes:'unrelated'}];
  const query={select:()=>query,not:()=>query,order:()=>query,range:async(a,b)=>{ranges.push([a,b]);return {data:rows.slice(a,b+1),error:null};}};

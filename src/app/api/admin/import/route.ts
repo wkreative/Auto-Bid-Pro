@@ -7,14 +7,15 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(req: NextRequest) {
   try {
     const client = await createClient();
-    const { data: { user } } = await client.auth.getUser();
-    if (!user) return NextResponse.json({ error: 'Inicia sesión' }, { status: 401 });
-    const { data: profile } = await client.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    const { data: { user }, error: authError } = await client.auth.getUser();
+    if (authError || !user) return NextResponse.json({ error: 'Inicia sesión' }, { status: 401 });
+    const supabase = createAdminClient();
+    const { data: profile, error: profileError } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    if (profileError) return NextResponse.json({ error: 'No se pudieron verificar tus permisos. Inténtalo nuevamente.' }, { status: 503 });
+    if (profile?.role !== 'admin') return NextResponse.json({ error: 'Solo una cuenta administradora puede importar vehículos.' }, { status: 403 });
     const { vehicles, batchId: requestedBatchId } = await req.json();
     if (requestedBatchId !== undefined && !isBatchId(requestedBatchId)) return NextResponse.json({ error: 'Número de lote inválido' }, { status: 400 });
     if (!vehicles || !Array.isArray(vehicles)) return NextResponse.json({ error: 'vehicles required' }, { status: 400 });
-    const supabase = createAdminClient();
     let ok = 0, fail = 0;
     const errs: string[] = [];
     const batchId = requestedBatchId ?? createBatchId();

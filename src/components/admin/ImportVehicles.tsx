@@ -30,6 +30,7 @@ export default function ImportVehicles({ initialBatchId }: { initialBatchId: str
   const [csvVehicles, setCsvVehicles] = useState<ParsedVehicle[] | null>(null);
   const [imagesMap, setImagesMap] = useState<Map<string, string[]> | null>(null);
   const [merged, setMerged] = useState<ParsedVehicle[]>([]);
+  const [importError, setImportError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<{ ok: number; fail: number; errs: string[]; batchId?: string } | null>(null);
   const [batchId, setBatchId] = useState<string>(initialBatchId);
@@ -114,7 +115,7 @@ export default function ImportVehicles({ initialBatchId }: { initialBatchId: str
   const handleImport = async () => {
     const currentBatchId = result?.ok ? createBatchId() : batchId;
     setBatchId(currentBatchId);
-    setImporting(true); setResult(null); setPhotoNotice(null);
+    setImporting(true); setImportError(null); setResult(null); setPhotoNotice(null);
     try {
       const res = await fetch('/api/admin/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ batchId: currentBatchId, vehicles: vehicles.map(v=>({brand:v.brand, model: v.model + (v.trim?' '+v.trim:''), year:v.year, vin:v.vin, mileage:v.mileage, location:'Puerto Rico', starting_price:v.starting_price, exterior_color:v.exterior_color, description: v.description, images:v.images})) }) });
       const data = await res.json();
@@ -122,7 +123,7 @@ export default function ImportVehicles({ initialBatchId }: { initialBatchId: str
       setResult({ ok: data.ok, fail: data.fail, errs: data.errs, batchId: data.batchId });
       setBatchId(data.batchId);
       await loadBatches();
-    } catch (e){ setResult({ ok:0, fail: vehicles.length, errs:[(e as Error).message], batchId: currentBatchId}); }
+    } catch (e) { setImportError((e as Error).message); }
     setImporting(false);
   };
 
@@ -180,6 +181,14 @@ export default function ImportVehicles({ initialBatchId }: { initialBatchId: str
         </div>
       )}
 
+      {importError && (
+        <div role="alert" className="p-6 rounded-2xl border border-red-500/30 bg-red-500/10 text-red-300 mb-6">
+          <h3 className="font-bold mb-2">No se pudo completar la solicitud de importación</h3>
+          <p>{importError}</p>
+          <p className="text-sm mt-2">Tus archivos siguen cargados. Si hubo un problema de conexión, revisa el inventario antes de reintentar.</p>
+        </div>
+      )}
+
       {result && (
         <div role="status" aria-live="polite" className={`p-6 rounded-2xl border mb-6 shadow-xl ${result.fail===0 && result.errs.length===0?'bg-green-500/10 border-green-500/30 text-green-400':'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'}`}>
           <div className="flex items-center gap-3 mb-2">
@@ -187,7 +196,7 @@ export default function ImportVehicles({ initialBatchId }: { initialBatchId: str
             <h3 className="font-bold text-lg">{result.fail === 0 && result.errs.length === 0 ? '¡Terminó de subir las fotos y los vehículos!' : 'Importación finalizada con errores; revisa los detalles.'}</h3>
           </div>
           <p className="text-sm font-medium">
-            {result.ok} vehículos e imágenes procesados con éxito. {result.batchId && <span className="bg-white/10 px-2 py-0.5 rounded text-xs font-mono">Lote {result.batchId}</span>} {result.fail>0 && `· ${result.fail} duplicados/error`}
+            {result.ok} vehículos guardados. {result.batchId && <span className="bg-white/10 px-2 py-0.5 rounded text-xs font-mono">Lote {result.batchId}</span>} {result.fail>0 && `· ${result.fail} vehículos con error`}
           </p>
           {result.errs.slice(0,5).map((e,i)=><p key={i} className="text-xs mt-1 text-red-400">{e}</p>)}
           <Link href="/admin/vehicles" className="inline-block mt-4 bg-white text-black px-5 py-2.5 rounded-xl text-sm font-bold shadow hover:bg-gray-100 transition-colors">Ver inventario publicado →</Link>
