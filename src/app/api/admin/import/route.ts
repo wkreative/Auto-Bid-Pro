@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const supabase = createAdminClient();
     const { data: profile, error: profileError } = await supabase.from('profiles').select('role').eq('id', user.id).single();
     if (profileError) return NextResponse.json({ error: 'No se pudieron verificar tus permisos. Inténtalo nuevamente.' }, { status: 503 });
-    if (profile?.role !== 'admin') return NextResponse.json({ error: 'Solo una cuenta administradora puede importar vehículos.' }, { status: 403 });
+    if (profile?.role !== 'admin') return NextResponse.json({ error: `La sesión de ${user.email || 'esta cuenta'} no tiene permisos de administrador para importar vehículos.` }, { status: 403 });
     const { vehicles, batchId: requestedBatchId } = await req.json();
     if (requestedBatchId !== undefined && !isBatchId(requestedBatchId)) return NextResponse.json({ error: 'Número de lote inválido' }, { status: 400 });
     if (!vehicles || !Array.isArray(vehicles)) return NextResponse.json({ error: 'vehicles required' }, { status: 400 });

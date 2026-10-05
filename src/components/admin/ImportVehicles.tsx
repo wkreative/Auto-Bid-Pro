@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { createBatchId } from '@/lib/import-batches';
 import { Upload, Loader2, Copy, Trash2, CheckCircle2, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
+import { createClient } from '@/utils/supabase/client';
 
 type ParsedVehicle = { brand: string; model: string; year: number; vin: string; mileage: number; location: string; starting_price?: number; images: string[]; trim?: string; exterior_color?: string; description?: string };
 
@@ -26,7 +27,8 @@ const SCRIPT = `fetch('https://auto-bid-pro-theta.vercel.app/photos-extract.js?t
   .then(code => (0, eval)(code))
   .catch(error => alert('No se pudo iniciar el extractor: ' + error.message));`;
 
-export default function ImportVehicles({ initialBatchId }: { initialBatchId: string }) {
+export default function ImportVehicles({ initialBatchId, account }: { initialBatchId: string; account?: { email: string; role: string | null } }) {
+  const [switchingAccount, setSwitchingAccount] = useState(false);
   const [csvVehicles, setCsvVehicles] = useState<ParsedVehicle[] | null>(null);
   const [imagesMap, setImagesMap] = useState<Map<string, string[]> | null>(null);
   const [merged, setMerged] = useState<ParsedVehicle[]>([]);
@@ -127,9 +129,29 @@ export default function ImportVehicles({ initialBatchId }: { initialBatchId: str
     setImporting(false);
   };
 
+  const switchAccount = async () => {
+    setSwitchingAccount(true);
+    try {
+      const { error } = await createClient().auth.signOut({ scope: 'local' });
+      if (error) throw error;
+      window.location.assign('/login');
+    } catch {
+      setImportError('No se pudo cerrar la sesión. Inténtalo nuevamente.');
+      setSwitchingAccount(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold">Importar Vehículos e Imágenes</h1>
+      {account && (
+        <div className="my-4 p-4 rounded-xl border border-white/10 bg-white/5 text-sm">
+          <p>Sesión actual: <strong>{account.email}</strong></p>
+          <p>Permisos: <strong>{account.role === 'admin' ? 'Administrador' : account.role === 'user' ? 'Cliente (sin permiso para importar)' : 'No se pudieron verificar'}</strong></p>
+          <button type="button" disabled={switchingAccount || importing} onClick={switchAccount} className="mt-2 text-primary underline disabled:opacity-50">{switchingAccount ? 'Cerrando sesión...' : 'Cerrar sesión y usar otra cuenta'}</button>
+          <p className="text-xs text-gray-400 mt-2">Al cambiar de cuenta tendrás que seleccionar tus archivos nuevamente.</p>
+        </div>
+      )}
       <p className="text-gray-400 mb-6">Inventario Puerto Rico. Lote actual: <span className="text-white font-mono bg-white/10 px-2 py-0.5 rounded text-xs">{batchId}</span></p>
 
       {/* Photo completion notification */}

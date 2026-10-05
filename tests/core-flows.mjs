@@ -131,10 +131,17 @@ const form=new FormData(); for(const [k,v] of Object.entries({email:' Test@examp
  assert.deepEqual(list,[{batch:batchId,count:1001},{batch:'MAN-PR-2025-01-01-ABCD',count:1}]);
  query.range=async()=>({data:null,error:new Error('database unavailable')});
  await assert.rejects(batchTools.listImportBatches({from:()=>query}),/database unavailable/);
- const ImportVehicles=load('src/components/admin/ImportVehicles.tsx',{'@/lib/import-batches':batchTools}).default;
+ const ImportVehicles=load('src/components/admin/ImportVehicles.tsx',{
+   '@/lib/import-batches':batchTools,
+   '@/utils/supabase/client':{createClient:()=>{throw new Error('No browser client needed while rendering');}},
+ }).default;
  const importHtml=renderToStaticMarkup(React.createElement(ImportVehicles,{initialBatchId:batchId}));
  assert.ok(importHtml.includes(batchId));
  assert.ok(importHtml.includes('Lotes importados'));
+ const accountHtml = renderToStaticMarkup(React.createElement(ImportVehicles,{initialBatchId:batchId,account:{email:'client@example.com',role:'user'}}));
+ assert.ok(accountHtml.includes('client@example.com'));
+ assert.ok(accountHtml.includes('Cliente (sin permiso para importar)'));
+ assert.ok(accountHtml.includes('Cerrar sesión y usar otra cuenta'));
  for (const instruction of ['search.manheim.com', 'Export → Export to CSV', 'F12', 'allow pasting', 'Capturar esta página', 'Descargar JSON', 'fotos.json', 'Copiar script para consola', 'photos-extract.js']) {
    assert.ok(importHtml.includes(instruction), instruction);
  }
