@@ -15,9 +15,42 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 const Calculator=load('src/components/ResaleCalculator.tsx',{'@/lib/calculator':{parseAmount}}).default;
 let html=renderToStaticMarkup(React.createElement(Calculator,{startingPrice:10000,estimatedRepairCost:1250.50,estimatedResaleValue:15000}));
-for(const value of ['$11,250.50','$3,749.50','$13,749.50','+33.3%']) assert.ok(html.includes(value),value);
+for(const value of ['$10,000.00','$5,000.00','$15,000.00','+50.0%']) assert.ok(html.includes(value),value);
+assert.ok(!html.includes('Reparaci'));
+assert.ok(!html.includes('readOnly'));
 html=renderToStaticMarkup(React.createElement(Calculator,{startingPrice:0,estimatedRepairCost:0,estimatedResaleValue:500}));
 assert.ok(!html.includes('NaN')&&!html.includes('Infinity'));
+const calculatorState = [];
+let stateIndex = 0;
+const InteractiveCalculator = load('src/components/ResaleCalculator.tsx', {
+  '@/lib/calculator': {parseAmount},
+  react: {...React, useState(initial) {
+    const index = stateIndex++;
+    if (!(index in calculatorState)) calculatorState[index] = initial;
+    return [calculatorState[index], value => { calculatorState[index] = value; }];
+  }},
+}).default;
+function calculatorTree() {
+  stateIndex = 0;
+  return InteractiveCalculator({startingPrice:10000,estimatedResaleValue:15000});
+}
+function findBidInput(node) {
+  if (!node || typeof node !== 'object') return;
+  if (node.props?.id === 'auction-bid-amount') return node;
+  for (const child of React.Children.toArray(node.props?.children)) {
+    const found = findBidInput(child);
+    if (found) return found;
+  }
+}
+for (const [amount, total, profit, roi] of [
+  ['8,000.50','$8,000.50','$6,999.50','+87.5%'],
+  ['12000','$12,000.00','$3,000.00','+25.0%'],
+  ['', '$0.00', '$15,000.00', '+0.0%'],
+]) {
+  findBidInput(calculatorTree()).props.onChange({target:{value:amount}});
+  const result = renderToStaticMarkup(calculatorTree());
+  for (const expected of [total,profit,roi]) assert.ok(result.includes(expected),expected);
+}
 let callCount=0, session=null, authError=null, payload;
 const {signup}=load('src/app/register/actions.ts',{
  'next/cache':{revalidatePath(){}}, 'next/navigation':{redirect(url){throw new Error(url)}},
@@ -68,4 +101,43 @@ const form=new FormData(); for(const [k,v] of Object.entries({email:' Test@examp
  assert.ok(importHtml.includes('Lotes importados'));
  console.log('PASS: import uses and persists the displayed batch ID; counts across database pages; legacy batches; database errors; initial batch rendering.');
  console.log('PASS: calculator parsing, rendered totals/profit/ROI/break-even, zero investment; signup validation, normalization, confirmation, session and error paths.');
+ let user = null, role = 'admin', profileError = null, dbError = null, writes = 0;
+ const createVehicle = load('src/app/api/admin/vehicles/route.ts', {
+   '@/lib/publication': load('src/lib/publication.ts'),
+   '@/utils/supabase/server': {createClient: async () => ({
+     auth: {getUser: async () => ({data: {user}})},
+     from: () => ({select: () => ({eq: () => ({single: async () => ({data: {role}, error: profileError})})})}),
+   })},
+   '@/utils/supabase/admin': {createAdminClient: () => {
+     writes++;
+     return {from: () => ({insert: rows => {
+       stored = rows[0];
+       return {select: () => ({single: async () => ({data: dbError ? null : {id:'new-vehicle'},error:dbError})})};
+     }})};
+   }},
+ }).POST;
+ const vehicleInput = {brand:'Toyota', model:'Corolla', vin:'TESTVIN', year:2025, mileage:100,
+   sale_type:'auction', status:'draft', starting_price:10000, estimated_repair_cost:500,
+   estimated_resale_value:15000, description:'Test', internal_notes:'untrusted', id:'untrusted'};
+ const requestVehicle = (input = vehicleInput) => createVehicle({json: async () => input});
+ assert.equal((await requestVehicle()).status,401);
+ user = {id:'admin'}; role = 'user';
+ assert.equal((await requestVehicle()).status,403);
+ role = 'admin'; profileError = {message:'unavailable'};
+ assert.equal((await requestVehicle()).status,403);
+ profileError = null;
+ assert.equal((await requestVehicle({...vehicleInput,year:null})).status,400);
+ assert.equal(writes,0);
+ const created = await requestVehicle();
+ assert.equal(created.status,201); assert.equal((await created.json()).id,'new-vehicle');
+ assert.equal(stored.status,'draft'); assert.equal(stored.starting_price,10000);
+ assert.equal(stored.estimated_repair_cost,500); assert.equal(stored.direct_sale_price,null);
+ assert.equal(stored.location,'Puerto Rico'); assert.equal(stored.id,undefined); assert.equal(stored.internal_notes,undefined);
+ assert.equal((await requestVehicle({...vehicleInput,status:'published',sale_type:'direct_sale',direct_sale_price:20000})).status,201);
+ assert.equal(stored.direct_sale_price,20000); assert.equal(stored.starting_price,null);
+ assert.equal(stored.estimated_repair_cost,null);
+ dbError = {code:'23505',message:'vehicles_vin_key'};
+ const duplicate = await requestVehicle();
+ assert.equal(duplicate.status,409); assert.equal((await duplicate.json()).error,'vehicles_vin_key');
+ console.log('PASS: individual creation checks session and admin role before privileged access; validates input; supports drafts, auctions and direct sales; preserves duplicate VIN errors.');
 })().catch(e=>{console.error(e);process.exitCode=1});

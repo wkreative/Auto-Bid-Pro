@@ -92,9 +92,13 @@ export default function VehicleForm({ vehicle }: VehicleFormProps) {
         const { error } = await supabase.from('vehicles').update(vehicleData).eq('id', vehicleId);
         if (error) throw error;
       } else {
-        const { data: newVehicle, error: vehicleError } = await supabase
-          .from('vehicles').insert([vehicleData]).select().single();
-        if (vehicleError) throw vehicleError;
+        const response = await fetch('/api/admin/vehicles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(vehicleData),
+        });
+        const newVehicle = await response.json();
+        if (!response.ok) throw new Error(newVehicle.error || 'No se pudo guardar el vehículo.');
         vehicleId = newVehicle.id;
         setSavedVehicleId(vehicleId);
       }

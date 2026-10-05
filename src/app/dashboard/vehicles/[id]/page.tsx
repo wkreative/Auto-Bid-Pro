@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
-import { MapPin, Gauge, Shield, Zap, Info, ChevronLeft, Calendar, FileText, CreditCard, ShoppingCart } from 'lucide-react';
+import { MapPin, Gauge, Zap, Info, ChevronLeft, Calendar, FileText, CreditCard, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import MediaCarousel from '@/components/MediaCarousel';
 import FavoriteButton from '@/components/FavoriteButton';
@@ -121,18 +121,11 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                       <span className="text-xl font-bold text-green-400">${vehicle.estimated_resale_value?.toLocaleString()}</span>
                     </div>
                   )}
-                  {vehicle.estimated_repair_cost && (
-                    <div className="flex justify-between items-center p-4 border border-red-500/20 bg-red-500/5 rounded-2xl">
-                      <span className="text-gray-300 flex items-center gap-2"><Shield className="h-4 w-4 text-red-400" /> Costos Estimado de Reparación</span>
-                      <span className="text-xl font-bold text-red-400">${vehicle.estimated_repair_cost?.toLocaleString()}</span>
-                    </div>
-                  )}
                 </div>
 
                 <ResaleCalculator
                   startingPrice={vehicle.starting_price || 0}
                   estimatedResaleValue={vehicle.estimated_resale_value}
-                  estimatedRepairCost={vehicle.estimated_repair_cost}
                 />
 
                 <div className="border-t border-white/10 pt-6">

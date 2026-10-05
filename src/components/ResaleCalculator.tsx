@@ -7,22 +7,20 @@ import { Calculator, DollarSign, TrendingUp, ArrowUpRight } from 'lucide-react';
 interface ResaleCalculatorProps {
   startingPrice: number;
   estimatedResaleValue?: number;
-  estimatedRepairCost?: number;
 }
 
-export default function ResaleCalculator({ startingPrice, estimatedResaleValue, estimatedRepairCost }: ResaleCalculatorProps) {
-  const [repairCost, setRepairCost] = useState<string>(estimatedRepairCost ? String(estimatedRepairCost) : '');
+export default function ResaleCalculator({ startingPrice, estimatedResaleValue }: ResaleCalculatorProps) {
+  const [bidAmount, setBidAmount] = useState<string>(String(startingPrice));
   const [otherCosts, setOtherCosts] = useState<string>('');
   const [userResaleValue, setUserResaleValue] = useState<string>(estimatedResaleValue ? String(estimatedResaleValue) : '');
 
-  const numRepair = parseAmount(repairCost);
   const numOther = parseAmount(otherCosts);
   const numResale = parseAmount(userResaleValue);
-  const totalInvestment = parseAmount(startingPrice) + numRepair + numOther;
+  const totalInvestment = parseAmount(bidAmount) + numOther;
   const resaleValue = numResale;
   const potentialProfit = resaleValue - totalInvestment;
   const roi = totalInvestment > 0 ? ((potentialProfit / totalInvestment) * 100) : 0;
-  const hasInput = numRepair > 0 || numOther > 0 || resaleValue > 0;
+  const hasInput = parseAmount(bidAmount) > 0 || numOther > 0 || resaleValue > 0;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
@@ -45,42 +43,26 @@ export default function ResaleCalculator({ startingPrice, estimatedResaleValue, 
       </h3>
       <p className="text-sm text-gray-400">Ingresa tus costos estimados para calcular la ganancia potencial</p>
 
+      <p className="text-xs text-gray-500">Precio base de referencia: {formatCurrency(startingPrice)}. Puedes calcular con una oferta menor o mayor. Este cálculo no envía una oferta.</p>
+
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-            <DollarSign className="h-4 w-4" /> Precio de Subasta (Base)
+          <label htmlFor="auction-bid-amount" className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
+            <DollarSign className="h-4 w-4" /> Tu Oferta de Subasta
           </label>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
             <input
-              type="number"
-              value={startingPrice}
-              readOnly
-              className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-3 pl-8 pr-4 text-lg font-bold text-white focus:outline-none focus:border-primary cursor-not-allowed opacity-60"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-            <DollarSign className="h-4 w-4" /> Costos Estimado de Reparación
-          </label>
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
-            <input
+              id="auction-bid-amount"
               type="text"
               inputMode="decimal"
-              value={repairCost}
-              onFocus={(e) => { if (e.target.value === '0' || e.target.value === '0.00') setRepairCost(''); }}
-              onChange={(e) => setRepairCost(e.target.value.replace(/[^0-9.,]/g, '').replace(/(\..*)\./g, '$1'))}
-              onBlur={(e) => { if (e.target.value) setRepairCost(formatInput(e.target.value)); }}
+              value={bidAmount}
+              onChange={(e) => setBidAmount(e.target.value.replace(/[^0-9.,]/g, '').replace(/(\..*)\./g, '$1'))}
+              onBlur={(e) => { if (e.target.value) setBidAmount(formatInput(e.target.value)); }}
               placeholder="0.00"
               className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-3 pl-8 pr-4 text-lg font-bold text-white focus:outline-none focus:border-primary transition-colors"
             />
           </div>
-          {estimatedRepairCost && parseFloat(repairCost.replace(/,/g,'')) !== estimatedRepairCost && (
-            <p className="text-xs text-gray-500 mt-1">Valor estimado del vendedor: {formatCurrency(estimatedRepairCost)}</p>
-          )}
         </div>
 
         <div>
@@ -134,7 +116,7 @@ export default function ResaleCalculator({ startingPrice, estimatedResaleValue, 
             <div className="bg-white/5 p-4 rounded-xl border border-white/5">
               <p className="text-sm text-gray-400">Inversión Total</p>
               <p className="text-2xl font-bold text-white">{formatCurrency(totalInvestment)}</p>
-              <p className="text-xs text-gray-500 mt-1">Subasta + Reparaciones + Otros</p>
+              <p className="text-xs text-gray-500 mt-1">Tu oferta + Otros costos</p>
             </div>
             <div className="bg-white/5 p-4 rounded-xl border border-white/5">
               <p className="text-sm text-gray-400">Valor de Reventa</p>
@@ -158,7 +140,7 @@ export default function ResaleCalculator({ startingPrice, estimatedResaleValue, 
             <div className="bg-primary/10 border border-primary/20 p-4 rounded-xl">
               <p className="text-sm text-primary/80 flex items-center gap-2">
                 <ArrowUpRight className="h-4 w-4" />
-                <strong>Precio Máximo de Oferta Sugerido:</strong> {formatCurrency(resaleValue - numRepair - numOther)}
+                <strong>Precio Máximo de Oferta Sugerido:</strong> {formatCurrency(resaleValue - numOther)}
                 <span className="text-xs ml-2 text-gray-500">(para break-even)</span>
               </p>
             </div>
