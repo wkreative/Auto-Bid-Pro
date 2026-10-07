@@ -1,8 +1,9 @@
 'use client';
 import Link from 'next/link';
+import LogoutButton from '@/components/LogoutButton';
 import { usePathname } from 'next/navigation';
 import { Suspense } from 'react';
-import { User, LayoutDashboard, Search, Heart, Bell, Settings, LogOut } from 'lucide-react';
+import { User, LayoutDashboard, Search, Heart, Bell, Settings } from 'lucide-react';
 import DashboardSearch from '@/components/ui/DashboardSearch';
 
 export default function DashboardLayout({
@@ -51,10 +52,7 @@ export default function DashboardLayout({
         </nav>
         
         <div className="p-4 border-t border-white/5">
-          <button className="flex items-center gap-3 px-3 py-3 w-full text-left text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-all">
-            <LogOut className="h-5 w-5" />
-            Cerrar Sesión
-          </button>
+          <LogoutButton />
         </div>
       </aside>
       
@@ -74,6 +72,7 @@ export default function DashboardLayout({
           </div>
           
           <div className="flex items-center gap-4">
+            <div className="md:hidden"><LogoutButton /></div>
             <Link href="/dashboard/alerts" aria-label="Ver notificaciones" className="relative p-2 text-gray-400 hover:text-white transition-colors">
               <Bell className="h-6 w-6" />
             </Link>

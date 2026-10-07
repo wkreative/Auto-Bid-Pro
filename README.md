@@ -19,8 +19,10 @@ Plataforma premium para la adquisición de vehículos de subasta.
 
 ## Pasos para ejecutar localmente
 
-1. **Instalar dependencias:**
+1. **Usar Node.js 22 e instalar dependencias:**
    ```bash
+   nvm install
+   nvm use
    npm install
    ```
 
@@ -43,3 +45,19 @@ Plataforma premium para la adquisición de vehículos de subasta.
 2. Crear la integración con Stripe Checkout en la página de precios para generar las suscripciones.
 3. Crear el panel de administrador (`/admin`) para gestionar vehículos y aprobar ofertas.
 4. Conectar el Dashboard a los datos reales de la tabla `vehicles` de Supabase en vez del mock data.
+
+## Registro de cuentas
+
+Supabase requiere WebSocket nativo en el servidor; ejecuta la aplicación con Node.js 22, indicado en `.nvmrc`, `.node-version` y `package.json`. Node.js 20 sin WebSocket puede impedir que se inicialice el cliente de autenticación.
+
+El formulario muestra mensajes según los [códigos de error de Supabase Auth](https://supabase.com/docs/guides/auth/debugging/error-codes). Los registros del servidor incluyen únicamente el código y el estado del error, sin credenciales ni sesiones.
+
+## Acceso y cierre de sesión
+
+José (`josejmzmo@gmail.com`) es el único superadministrador: puede crear administradores, asignar o retirar sus permisos y borrar sus cuentas. Gaby y Autobroker PR LLC siguen como administradores. La identidad de José se valida por ID, correo confirmado y `app_metadata.role`; los permisos se almacenan en metadata protegida por Supabase Auth. No se permite eliminar o degradar al superadministrador. Los administradores pueden editar información de contacto sin modificar roles administrativos.
+
+En `/admin/users` se muestran nombres, correos, teléfonos, roles y fechas de registro. Los correos provienen de Supabase Auth y los teléfonos del perfil, con respaldo en los datos de registro. Solo se envían al navegador los campos de contacto necesarios.
+
+El botón Cerrar Sesión está disponible en ambos paneles para escritorio y móvil. Cierra la sesión del dispositivo actual, elimina sus cookies de autenticación y regresa al inicio de sesión.
+
+La migración `supabase/migrations/202610070001_super_admin_contacts.sql` protege los perfiles contra escritura directa desde clientes autenticados. `is_admin()` consulta metadata actual de Auth, por lo que retirar un rol invalida también el acceso directo a los datos. El registro permite guardar un teléfono opcional.

@@ -92,11 +92,12 @@ const form=new FormData(); for(const [k,v] of Object.entries({email:' Test@examp
  assert.ok(batchTools.isBatchId(batchId));
  assert.equal(batchTools.isBatchId('invalid|BATCH:other'), false);
  let stored;
- let importUser = {id:'admin'}, importRole = 'admin', importProfileError = null, importWrites = 0;
+ let importUser = {id:'admin',email:'gabytorres0213@gmail.com',email_confirmed_at:'2026-10-05',app_metadata:{role:'admin'}}, importRole = 'admin', importProfileError = null, importWrites = 0;
  const importedPhotos = [], uploadedPhotos = [];
  const {POST} = load('src/app/api/admin/import/route.ts', {
    '@/lib/import-batches': batchTools,
    '@/lib/publication': load('src/lib/publication.ts'),
+   '@/lib/admin-access': load('src/lib/admin-access.ts'),
    '@/utils/supabase/server': {createClient: async () => ({
      auth: {getUser: async () => ({data: {user: importUser}})},
      from: () => { throw new Error('Do not read admin roles through session RLS'); },
@@ -126,7 +127,7 @@ const form=new FormData(); for(const [k,v] of Object.entries({email:' Test@examp
  const importRequest = {json: async () => ({batchId,vehicles:[{vin:'TEST',images:[]}]})};
  importUser = null;
  assert.equal((await POST(importRequest)).status,401);
- importUser = {id:'admin'}; importRole = 'user';
+ importUser = {id:'admin',email:'gabytorres0213@gmail.com',email_confirmed_at:'2026-10-05',app_metadata:{role:'admin'}}; importRole = 'user';
  assert.equal((await POST(importRequest)).status,403);
  importRole = 'admin'; importProfileError = {message:'unavailable'};
  assert.equal((await POST(importRequest)).status,503);
@@ -175,6 +176,7 @@ const form=new FormData(); for(const [k,v] of Object.entries({email:' Test@examp
  let user = null, role = 'admin', profileError = null, dbError = null, writes = 0;
  const createVehicle = load('src/app/api/admin/vehicles/route.ts', {
    '@/lib/publication': load('src/lib/publication.ts'),
+   '@/lib/admin-access': load('src/lib/admin-access.ts'),
    '@/utils/supabase/server': {createClient: async () => ({
      auth: {getUser: async () => ({data: {user}})},
      from: () => { throw new Error('Session profile reads must not gate administrator access'); },
@@ -198,7 +200,7 @@ const form=new FormData(); for(const [k,v] of Object.entries({email:' Test@examp
    estimated_resale_value:15000, description:'Test', internal_notes:'untrusted', id:'untrusted'};
  const requestVehicle = (input = vehicleInput) => createVehicle({json: async () => input});
  assert.equal((await requestVehicle()).status,401);
- user = {id:'admin'}; role = 'user';
+ user = {id:'admin',email:'gabytorres0213@gmail.com',email_confirmed_at:'2026-10-05',app_metadata:{role:'admin'}}; role = 'user';
  assert.equal((await requestVehicle()).status,403);
  role = null;
  assert.equal((await requestVehicle()).status,403);

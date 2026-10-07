@@ -16,8 +16,10 @@ export default function UserFormModal({
   isOpen,
   onClose,
   user,
+  canManageAdmins,
 }: {
   isOpen: boolean
+  canManageAdmins: boolean
   onClose: () => void
   user?: User | null
 }) {
@@ -95,10 +97,18 @@ export default function UserFormModal({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">Rol</label>
-              <select name="role" defaultValue={user?.role || 'user'} className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-2.5 px-4 text-white focus:outline-none focus:border-primary">
-                <option value="user">Usuario</option>
-                <option value="admin">Administrador</option>
-              </select>
+              {canManageAdmins && user?.role !== 'super_admin' ? (
+                <select name="role" defaultValue={user?.role || 'user'} className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-2.5 px-4 text-white">
+                  <option value="user">Usuario</option>
+                  <option value="admin">Administrador</option>
+                </select>
+              ) : (
+                <>
+                  <input type="hidden" name="role" value={user?.role === 'super_admin' ? 'admin' : user?.role || 'user'} />
+                  <p className="py-2.5 text-gray-300">{user?.role === 'super_admin' ? 'Superadministrador' : user?.role === 'admin' ? 'Administrador' : 'Usuario'}</p>
+                </>
+              )}
+              <p className="text-xs text-gray-400">Solo José puede gestionar roles administrativos.</p>
             </div>
           </div>
 

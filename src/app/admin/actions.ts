@@ -1,10 +1,10 @@
 'use server'
 
-import { createClient } from '@/utils/supabase/server'
+import { requireAdmin } from '@/utils/supabase/require-admin'
 import { revalidatePath } from 'next/cache'
 
 export async function deleteVehicle(vehicleId: string) {
-  const supabase = await createClient()
+  const { supabase } = await requireAdmin()
 
   const { data: vehicle } = await supabase
     .from('vehicles')
@@ -26,7 +26,7 @@ export async function deleteVehicle(vehicleId: string) {
 }
 
 export async function updateBidStatus(bidId: string, status: string) {
-  const supabase = await createClient()
+  const { supabase } = await requireAdmin()
 
   const { error } = await supabase
     .from('bids')

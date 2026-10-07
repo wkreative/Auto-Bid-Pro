@@ -1,7 +1,8 @@
 'use client';
 import Link from 'next/link';
+import LogoutButton from '@/components/LogoutButton';
 import { usePathname } from 'next/navigation';
-import { Car, LayoutDashboard, Users, PlusCircle, Settings, LogOut, FileText, Upload } from 'lucide-react';
+import { Car, LayoutDashboard, Users, PlusCircle, Settings, FileText, Upload } from 'lucide-react';
 
 export default function AdminLayout({
   children,
@@ -50,10 +51,7 @@ export default function AdminLayout({
         </nav>
         
         <div className="p-4 border-t border-white/5">
-          <button className="flex items-center gap-3 px-3 py-3 w-full text-left text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-all">
-            <LogOut className="h-5 w-5" />
-            Cerrar Sesión
-          </button>
+          <LogoutButton />
         </div>
       </aside>
       
@@ -72,6 +70,7 @@ export default function AdminLayout({
           </div>
           
           <div className="flex items-center gap-4">
+            <div className="md:hidden"><LogoutButton /></div>
             <div className="h-10 w-10 rounded-full bg-gradient-to-r from-red-500 to-red-800 flex items-center justify-center font-bold">
               AD
             </div>

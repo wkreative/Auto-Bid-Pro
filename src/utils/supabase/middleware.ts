@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isAdminUser } from '@/lib/admin-access'
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -37,24 +38,32 @@ export async function updateSession(request: NextRequest) {
 
   const isAuthRoute = request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/register')
   const isProtectedRoute = request.nextUrl.pathname.startsWith('/dashboard') || request.nextUrl.pathname.startsWith('/admin')
+  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin') || request.nextUrl.pathname.startsWith('/api/admin')
+  function redirectTo(path: string) {
+    const url = request.nextUrl.clone()
+    url.pathname = path
+    url.search = ''
+    const response = NextResponse.redirect(url)
+    supabaseResponse.cookies.getAll().forEach(cookie => response.cookies.set(cookie))
+    return response
+  }
+
+  if (isAdminRoute && (!user?.email_confirmed_at || !isAdminUser(user))) {
+    if (request.nextUrl.pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: user ? 'Acceso restringido al administrador.' : 'Inicia sesión.' }, { status: user ? 403 : 401 })
+    }
+    return redirectTo(user ? '/dashboard' : '/login')
+  }
 
   // If user is not logged in and tries to access protected routes
   if (!user && isProtectedRoute) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
+    return redirectTo('/login')
   }
 
   // If user is logged in and tries to access auth routes
   if (user && isAuthRoute) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
-    return NextResponse.redirect(url)
+    return redirectTo(isAdminUser(user) ? '/admin' : '/dashboard')
   }
-
-  // Basic admin protection (ideal is checking the profiles table for role = 'admin')
-  // We'll leave it open if logged in for now, or check email
-  // if (request.nextUrl.pathname.startsWith('/admin') && user?.email !== 'tu_admin@email.com') { ... }
 
   return supabaseResponse
 }

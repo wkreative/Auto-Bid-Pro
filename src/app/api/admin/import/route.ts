@@ -1,3 +1,4 @@
+import { isAdminUser } from '@/lib/admin-access';
 import { createBatchId, isBatchId } from '@/lib/import-batches';
 import { createClient } from '@/utils/supabase/server';
 import { publicationText } from '@/lib/publication';
@@ -9,6 +10,7 @@ export async function POST(req: NextRequest) {
     const client = await createClient();
     const { data: { user }, error: authError } = await client.auth.getUser();
     if (authError || !user) return NextResponse.json({ error: 'Inicia sesión' }, { status: 401 });
+    if (!user.email_confirmed_at || !isAdminUser(user)) return NextResponse.json({ error: 'Acceso restringido al administrador.' }, { status: 403 });
     const supabase = createAdminClient();
     const { data: profile, error: profileError } = await supabase.from('profiles').select('role').eq('id', user.id).single();
     if (profileError) return NextResponse.json({ error: 'No se pudieron verificar tus permisos. Inténtalo nuevamente.' }, { status: 503 });

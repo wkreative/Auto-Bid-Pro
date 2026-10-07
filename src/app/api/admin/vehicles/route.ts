@@ -1,3 +1,4 @@
+import { isAdminUser } from '@/lib/admin-access';
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { publicationText } from '@/lib/publication';
@@ -8,6 +9,7 @@ export async function POST(req: Request) {
     const client = await createClient();
     const { data: { user }, error: authError } = await client.auth.getUser();
     if (authError || !user) return NextResponse.json({ error: 'Inicia sesión' }, { status: 401 });
+    if (!user.email_confirmed_at || !isAdminUser(user)) return NextResponse.json({ error: 'Acceso restringido al administrador.' }, { status: 403 });
     // Read the verified user's role on the server so profile RLS cannot hide it.
     const admin = createAdminClient();
     const { data: profile, error: profileError } = await admin.from('profiles').select('role').eq('id', user.id).single();

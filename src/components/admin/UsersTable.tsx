@@ -7,6 +7,7 @@ import UserFormModal from './UserFormModal'
 
 type Profile = {
   id: string
+  email: string
   first_name: string | null
   last_name: string | null
   phone: string | null
@@ -14,7 +15,7 @@ type Profile = {
   created_at: string
 }
 
-export default function UsersTable({ profiles }: { profiles: Profile[] }) {
+export default function UsersTable({ profiles, canManageAdmins, currentUserId }: { profiles: Profile[]; canManageAdmins: boolean; currentUserId: string }) {
   const [editUser, setEditUser] = useState<Profile | null>(null)
   const [showCreate, setShowCreate] = useState(false)
 
@@ -33,12 +34,12 @@ export default function UsersTable({ profiles }: { profiles: Profile[] }) {
         </button>
       </div>
 
-      <div className="glass rounded-3xl overflow-hidden border border-white/5">
+      <div className="glass rounded-3xl overflow-x-auto border border-white/5">
         <table className="w-full text-left">
           <thead className="bg-white/5 border-b border-white/10">
             <tr>
               <th className="p-4 font-medium text-gray-400">Usuario</th>
-              <th className="p-4 font-medium text-gray-400">ID / UUID</th>
+              <th className="p-4 font-medium text-gray-400">Correo electrónico</th>
               <th className="p-4 font-medium text-gray-400">Rol</th>
               <th className="p-4 font-medium text-gray-400">Fecha de Registro</th>
               <th className="p-4 font-medium text-gray-400">Acciones</th>
@@ -58,16 +59,16 @@ export default function UsersTable({ profiles }: { profiles: Profile[] }) {
                     </div>
                     <div>
                       <p className="font-bold">{profile.first_name} {profile.last_name}</p>
-                      <p className="text-xs text-gray-500">{profile.phone || 'Sin teléfono'}</p>
+                      <p className="text-xs text-gray-500">{profile.phone ? <a href={`tel:${profile.phone}`} className="hover:underline">{profile.phone}</a> : 'Sin teléfono'}</p>
                     </div>
                   </td>
                   <td className="p-4 text-xs text-gray-400 font-mono">
-                    {profile.id.substring(0, 12)}...
+                    <a href={`mailto:${profile.email}`} className="hover:underline">{profile.email || 'Sin correo'}</a>
                   </td>
                   <td className="p-4">
-                    {profile.role === 'admin' ? (
+                    {profile.role !== 'user' ? (
                       <span className="bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-max">
-                        <Shield className="h-3 w-3" /> Administrador
+                        <Shield className="h-3 w-3" /> {profile.role === 'super_admin' ? 'Superadministrador' : 'Administrador'}
                       </span>
                     ) : (
                       <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 w-max">
@@ -87,7 +88,7 @@ export default function UsersTable({ profiles }: { profiles: Profile[] }) {
                       >
                         <Edit className="h-4 w-4" />
                       </button>
-                      <DeleteUserButton userId={profile.id} userName={`${profile.first_name} ${profile.last_name}`} />
+                      {profile.id !== currentUserId && profile.role !== 'super_admin' && (profile.role === 'user' || canManageAdmins) && <DeleteUserButton userId={profile.id} userName={profile.email} />}
                     </div>
                   </td>
                 </tr>
@@ -97,8 +98,8 @@ export default function UsersTable({ profiles }: { profiles: Profile[] }) {
         </table>
       </div>
 
-      <UserFormModal isOpen={showCreate} onClose={() => setShowCreate(false)} />
-      <UserFormModal isOpen={!!editUser} onClose={() => setEditUser(null)} user={editUser} />
+      <UserFormModal canManageAdmins={canManageAdmins} isOpen={showCreate} onClose={() => setShowCreate(false)} />
+      <UserFormModal canManageAdmins={canManageAdmins} isOpen={!!editUser} onClose={() => setEditUser(null)} user={editUser} />
     </>
   )
 }

@@ -1,8 +1,10 @@
+import { requireAdmin } from '@/utils/supabase/require-admin';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
+    await requireAdmin();
     const { batch } = await req.json();
     if (!batch) return NextResponse.json({ error: 'batch required' }, { status: 400 });
     const supabase = createAdminClient();
