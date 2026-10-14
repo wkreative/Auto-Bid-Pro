@@ -5,7 +5,8 @@ import { Upload, Loader2, Copy, Trash2, CheckCircle2, Image as ImageIcon } from 
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 
-type ParsedVehicle = { brand: string; model: string; year: number; vin: string; mileage: number; location: string; starting_price?: number; images: string[]; trim?: string; exterior_color?: string; description?: string };
+type ParsedVehicle = { brand: string; model: string; year: number; vin: string; mileage: number; location: string; starting_price?: number; images: string[]; trim?: string; exterior_color?: string; description?: string; lot?: string };
+type ExtractedVehicle = { images: string[]; lot?: string };
 
 function parseCSVLine(line: string, delim: string): string[] {
   const cols: string[] = []; let cur = '', inQ = false;
@@ -30,7 +31,7 @@ const SCRIPT = `fetch('https://auto-bid-pro-theta.vercel.app/photos-extract.js?t
 export default function ImportVehicles({ initialBatchId, account }: { initialBatchId: string; account?: { email: string; role: string | null } }) {
   const [switchingAccount, setSwitchingAccount] = useState(false);
   const [csvVehicles, setCsvVehicles] = useState<ParsedVehicle[] | null>(null);
-  const [imagesMap, setImagesMap] = useState<Map<string, string[]> | null>(null);
+  const [imagesMap, setImagesMap] = useState<Map<string, ExtractedVehicle> | null>(null);
   const [merged, setMerged] = useState<ParsedVehicle[]>([]);
   const [importError, setImportError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
@@ -76,23 +77,31 @@ export default function ImportVehicles({ initialBatchId, account }: { initialBat
   const handleImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; if (!f) return; const t = await f.text();
     try {
-      const arr: { vin: string; image: string }[] = JSON.parse(t);
-      const map = new Map<string, string[]>();
-      for (const { vin, image } of arr) {
-        if (!map.has(vin)) map.set(vin, []);
-        if (!map.get(vin)!.includes(image)) map.get(vin)!.push(image);
+      const arr: { vin: string; image?: string; lot?: string }[] = JSON.parse(t);
+      const map = new Map<string, ExtractedVehicle>();
+      for (const { vin, image, lot } of arr) {
+        const key = vin.trim().toUpperCase();
+        if (!map.has(key)) map.set(key, { images: [] });
+        const entry = map.get(key)!;
+        if (typeof image === 'string' && image && !entry.images.includes(image)) entry.images.push(image);
+        if (typeof lot === 'string' && lot.trim()) entry.lot = lot.trim();
       }
       setImagesMap(map);
       if (csvVehicles) merge(csvVehicles, map);
       else setMerged([]); 
       setResult(null);
 
-      const totalPhotos = [...map.values()].flat().length;
+      const totalPhotos = [...map.values()].reduce((sum, entry) => sum + entry.images.length, 0);
       setPhotoNotice(`Archivo leído. Fotos listas para importar: ${totalPhotos} fotos para ${map.size} vehículos.`);
     } catch { alert('JSON de fotos inválido'); }
   };
-  const merge = (csv: ParsedVehicle[], map: Map<string, string[]>) => {
-    const m = csv.map(v => ({ ...v, images: (map.get(v.vin) || []).slice(0, 8) }));
+  const merge = (csv: ParsedVehicle[], map: Map<string, ExtractedVehicle>) => {
+    const m = csv.map(v => {
+      const entry = map.get(v.vin);
+      const lot = entry?.lot;
+      return { ...v, lot, images: (entry?.images || []).slice(0, 8),
+        description: [lot ? `Lot: ${lot}` : '', v.description].filter(Boolean).join(' | ') };
+    });
     setMerged(m);
   };
   const vehicles = csvVehicles ? merged : [];
@@ -174,7 +183,7 @@ export default function ImportVehicles({ initialBatchId, account }: { initialBat
           <li><b>Abre la consola en la pestaña de Manheim:</b> presiona <b>F12</b> (o <b>Ctrl + Shift + J</b>) y selecciona <b>Console / Consola</b>. Pega el código y presiona <b>Enter</b>. Si el navegador bloquea el pegado y te pide confirmarlo, revisa el código de abajo y escribe <b>allow pasting</b> solo si reconoces este extractor; luego pega el código.</li>
           <li><b>Captura todas las páginas:</b> espera a que el extractor termine. Aparecerá el panel <b>Auto Bid Pro - Extractor de Fotos</b> con el número de VINs y fotos. Intenta avanzar automáticamente hasta 20 páginas. Si no avanza o quedan resultados, pasa manualmente a la siguiente página y pulsa <b>Capturar esta página</b>; espera antes de repetir. Mantén la misma pestaña sin recargar para conservar las fotos capturadas.</li>
           <li><b>Guarda las fotos:</b> al terminar pulsa <b>Descargar JSON</b> en el panel. Se guardará <b>fotos.json</b>; si ya se descargó automáticamente, usa la descarga más reciente después de capturar todas las páginas. Si marca 0 fotos, confirma que los resultados y sus imágenes estén cargados y vuelve a capturar.</li>
-          <li><b>Sube ambos archivos aquí:</b> selecciona <b>Export.csv</b> en <b>1. Archivo CSV</b> y <b>fotos.json</b> en <b>2. Fotos JSON</b>. Revisa la vista previa y el número de fotos por vehículo. Se vinculan por VIN y se importan hasta 8 fotos por vehículo.</li>
+          <li><b>Sube ambos archivos aquí:</b> selecciona <b>Export.csv</b> en <b>1. Archivo CSV</b> y <b>fotos.json</b> en <b>2. Fotos JSON</b>. Revisa la vista previa y el número de fotos por vehículo. Se vinculan por VIN y se importan hasta 8 fotos por vehículo. El número de Manheim aparece en la descripción como Lot: 10/15 2-41 cuando se captura.</li>
           <li><b>Importa y verifica:</b> pulsa <b>Importar</b> y espera el resultado sin cerrar la página. Revisa cualquier error y pulsa <b>Ver inventario publicado</b>. Guarda el número de lote para identificar esta carga.</li>
         </ol>
         <div className="mt-4 flex items-center gap-2">
@@ -189,7 +198,7 @@ export default function ImportVehicles({ initialBatchId, account }: { initialBat
           <Upload className="h-8 w-8 mb-2" /><span className="font-bold">1. Archivo CSV</span><span className="text-xs text-gray-400">{csvVehicles ? `${csvVehicles.length} vehículos` : 'Click para seleccionar'}</span><input type="file" disabled={importing} accept=".csv" onChange={handleCsv} className="hidden" />{csvVehicles && <span className="mt-2 text-green-400 text-xs font-bold">✓ Cargado</span>}
         </label>
         <label className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center cursor-pointer ${imagesMap ? 'border-green-500/50 bg-green-500/5' : 'border-white/10 bg-white/[0.02] hover:border-primary/50'}`}>
-          <ImageIcon className="h-8 w-8 mb-2" /><span className="font-bold">2. Fotos JSON</span><span className="text-xs text-gray-400">{imagesMap ? `${[...imagesMap.values()].flat().length} fotos cargadas` : 'Opcional'}</span><input type="file" disabled={importing} accept=".json" onChange={handleImages} className="hidden" />{imagesMap && <span className="mt-2 text-green-400 text-xs font-bold">✓ Fotos listas</span>}
+          <ImageIcon className="h-8 w-8 mb-2" /><span className="font-bold">2. Fotos JSON</span><span className="text-xs text-gray-400">{imagesMap ? `${[...imagesMap.values()].reduce((sum, entry) => sum + entry.images.length, 0)} fotos cargadas` : 'Opcional'}</span><input type="file" disabled={importing} accept=".json" onChange={handleImages} className="hidden" />{imagesMap && <span className="mt-2 text-green-400 text-xs font-bold">✓ Fotos listas</span>}
         </label>
       </div>
 
@@ -199,7 +208,7 @@ export default function ImportVehicles({ initialBatchId, account }: { initialBat
             <span className="font-bold">{vehicles.length} vehículos listos {imagesMap ? `· ${vehicles.filter(v=>v.images.length>0).length} con fotos` : '· sin fotos'}{!imagesMap && <span className="text-yellow-400 font-normal text-xs ml-2">Sube el JSON de fotos para incluir imágenes</span>}</span>
             <button onClick={handleImport} disabled={importing} className="bg-primary hover:bg-primary-hover px-6 py-2 rounded-xl font-bold flex items-center gap-2 disabled:opacity-50">{importing ? <><Loader2 className="h-4 w-4 animate-spin" /> Subiendo vehículos y fotos...</> : <>Importar {vehicles.length}</>}</button>
           </div>
-          <div className="max-h-80 overflow-auto"><table className="w-full text-sm"><thead className="bg-white/5 sticky top-0"><tr><th className="p-3 text-left">Vehículo</th><th className="p-3">VIN</th><th className="p-3">Fotos</th></tr></thead><tbody className="divide-y divide-white/5">{vehicles.slice(0, 30).map((v,i)=><tr key={i}><td className="p-3">{v.year} {v.brand} {v.model}</td><td className="p-3 font-mono text-xs">{v.vin}</td><td className="p-3">{v.images.length || '-'}</td></tr>)}</tbody></table>{vehicles.length>30 && <p className="text-center text-xs text-gray-500 p-2">y {vehicles.length-30} más...</p>}</div>
+          <div className="max-h-80 overflow-auto"><table className="w-full text-sm"><thead className="bg-white/5 sticky top-0"><tr><th className="p-3 text-left">Vehículo</th><th className="p-3">VIN</th><th className="p-3">Lot</th><th className="p-3">Fotos</th></tr></thead><tbody className="divide-y divide-white/5">{vehicles.slice(0, 30).map((v,i)=><tr key={i}><td className="p-3">{v.year} {v.brand} {v.model}</td><td className="p-3 font-mono text-xs">{v.vin}</td><td className="p-3">{v.lot || '-'}</td><td className="p-3">{v.images.length || '-'}</td></tr>)}</tbody></table>{vehicles.length>30 && <p className="text-center text-xs text-gray-500 p-2">y {vehicles.length-30} más...</p>}</div>
         </div>
       )}
 

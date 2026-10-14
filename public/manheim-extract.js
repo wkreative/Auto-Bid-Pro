@@ -1,6 +1,22 @@
 (async () => {
   const VIN_RE = /\b[A-HJ-NPR-Z0-9]{17}\b/g;
   const pairs = new Map();
+  const lots = new Map();
+  const LOT_RE = /\b(0?[1-9]|1[0-2])\/(0?[1-9]|[12]\d|3[01])\s+(\d+)\s*[-–]\s*(\d+)\b/g;
+
+  function collectLots(node, out = new Set()) {
+    if (typeof node === 'string') {
+      for (const match of node.matchAll(LOT_RE)) out.add(`${match[1]}/${match[2]} ${match[3]}-${match[4]}`);
+    } else if (Array.isArray(node)) node.forEach((value) => collectLots(value, out));
+    else if (node && typeof node === 'object') Object.values(node).forEach((value) => collectLots(value, out));
+    return out;
+  }
+
+  function captureLot(vin, node, source) {
+    const values = [...collectLots(node)];
+    // Never guess which sale badge belongs to a vehicle.
+    if (values.length === 1 && (source === 'dom-card' || !lots.has(vin))) lots.set(vin, values[0]);
+  }
   const seenApiUrls = new Set();
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -44,6 +60,7 @@
 
     // Safe rule: only assign photos when this object has exactly one VIN.
     // This prevents assigning a vehicle's photos to the next vehicle by order.
+    if (vins.length === 1) captureLot(vins[0], node, source);
     if (vins.length === 1 && photos.length > 0) photos.slice(0, 8).forEach((photo) => addPair(vins[0], photo, source));
 
     if (Array.isArray(node)) node.forEach((item) => scanJson(item, source));
@@ -76,6 +93,7 @@
       const text = `${card.innerText || ''} ${card.textContent || ''} ${card.dataset ? JSON.stringify(card.dataset) : ''}`;
       const vins = [...new Set(text.toUpperCase().match(VIN_RE) || [])];
       if (vins.length !== 1) continue;
+      captureLot(vins[0], text, 'dom-card');
       const photos = [...card.querySelectorAll('img[src*="images.cdn.manheim.com"]')].map((img) => img.src);
       photos.slice(0, 8).forEach((photo) => addPair(vins[0], photo, 'dom-card'));
     }
@@ -128,7 +146,14 @@
   }
 
   function output() {
-    return [...pairs.entries()].flatMap(([vin, photos]) => [...photos].slice(0, 8).map((image) => ({ vin, image })));
+    const vins = new Set([...pairs.keys(), ...lots.keys()]);
+    return [...vins].flatMap((vin) => {
+      const photos = [...(pairs.get(vin) || [])].slice(0, 8);
+      const lot = lots.get(vin);
+      return photos.length
+        ? photos.map((image) => ({ vin, image, ...(lot ? { lot } : {}) }))
+        : [{ vin, lot }];
+    });
   }
 
   function download() {
@@ -139,12 +164,12 @@
     a.download = 'manheim-con-fotos.json';
     a.click();
     console.table(data.slice(0, 30));
-    alert(`Listo: ${data.length} fotos confiables para ${pairs.size} VINs.`);
+    alert(`Listo: ${data.filter((row) => row.image).length} fotos y ${lots.size} Lots capturados.`);
   }
 
   function updatePanel() {
     const el = document.getElementById('abp-manheim-count');
-    if (el) el.textContent = `${pairs.size} VINs / ${output().length} fotos`;
+    if (el) el.textContent = `${pairs.size} VINs / ${[...pairs.values()].reduce((sum, photos) => sum + Math.min(photos.size, 8), 0)} fotos / ${lots.size} Lots`;
   }
 
   function installPanel() {
