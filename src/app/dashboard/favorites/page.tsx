@@ -48,7 +48,7 @@ export default async function UserFavoritesPage() {
                 </div>
               </div>
               <div className="p-5 flex justify-between items-center">
-                <span className="text-lg font-bold">${vehicle.starting_price?.toLocaleString()}</span>
+                <span className="text-lg font-bold">{vehicle.starting_price == null ? 'Not Available' : `$${vehicle.starting_price.toLocaleString()}`}</span>
               </div>
             </Link>
           );

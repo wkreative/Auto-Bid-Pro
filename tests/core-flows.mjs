@@ -117,11 +117,12 @@ const form=new FormData(); for(const [k,v] of Object.entries({email:' Test@examp
      stored = rows[0]; return {select: () => ({single: async () => ({data: {id:`vehicle-${importWrites}`},error:null})})};
    }})})},
  });
- const response = await POST({json: async () => ({batchId,vehicles:[{brand:'Test',model:'Car',year:2026,vin:'TEST',images:[]}]})});
+ const response = await POST({json: async () => ({batchId,vehicles:[{brand:'Test',model:'Car',year:2026,vin:'TEST',starting_price:null,images:[]}]})});
  assert.equal(response.status,200);
  const result = await response.json();
  assert.equal(result.batchId,batchId);
  assert.equal(result.ok,1);
+ assert.equal(stored.starting_price,null);
  assert.ok(stored.internal_notes.includes(`BATCH:${batchId} |`));
  assert.ok(stored.description.includes(`[${batchId}]`));
  const importRequest = {json: async () => ({batchId,vehicles:[{vin:'TEST',images:[]}]})};

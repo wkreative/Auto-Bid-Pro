@@ -5,12 +5,12 @@ import { parseAmount, auctionCosts, maximumOffer } from '@/lib/calculator';
 import { Calculator, DollarSign, TrendingUp, ArrowUpRight } from 'lucide-react';
 
 interface ResaleCalculatorProps {
-  startingPrice: number;
+  startingPrice: number | null;
   estimatedResaleValue?: number;
 }
 
 export default function ResaleCalculator({ startingPrice, estimatedResaleValue }: ResaleCalculatorProps) {
-  const [bidAmount, setBidAmount] = useState<string>(String(startingPrice));
+  const [bidAmount, setBidAmount] = useState<string>(startingPrice == null ? '' : String(startingPrice));
   const [otherCosts, setOtherCosts] = useState<string>('');
   const [userResaleValue, setUserResaleValue] = useState<string>(estimatedResaleValue ? String(estimatedResaleValue) : '');
   const [discountedPayment, setDiscountedPayment] = useState(false);
@@ -45,7 +45,7 @@ export default function ResaleCalculator({ startingPrice, estimatedResaleValue }
       </h3>
       <p className="text-sm text-gray-400">Ingresa tus costos estimados para calcular la ganancia potencial</p>
 
-      <p className="text-xs text-gray-500">Precio base de referencia: {formatCurrency(startingPrice)}. Puedes calcular con una oferta menor o mayor. Este cálculo no envía una oferta.</p>
+      <p className="text-xs text-gray-500">Precio base de referencia: {startingPrice == null ? 'Not Available' : formatCurrency(startingPrice)}. Puedes calcular con una oferta menor o mayor. Este cálculo no envía una oferta.</p>
 
       <div className="space-y-4">
         <div>

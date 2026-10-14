@@ -126,7 +126,7 @@ export default async function DashboardPage({ searchParams }: Props) {
               <div className="bg-white/5 rounded-xl p-4 mb-4">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-gray-400">{vehicle.sale_type === 'direct_sale' ? 'Precio de Venta' : 'Oferta Inicial'}</span>
-                  <span className="font-bold text-lg">${(vehicle.direct_sale_price || vehicle.starting_price)?.toLocaleString()}</span>
+                  <span className="font-bold text-lg">{(vehicle.direct_sale_price ?? vehicle.starting_price) == null ? 'Not Available' : `$${(vehicle.direct_sale_price ?? vehicle.starting_price).toLocaleString()}`}</span>
                 </div>
                 {vehicle.estimated_resale_value && (
                 <div className="flex justify-between items-center">

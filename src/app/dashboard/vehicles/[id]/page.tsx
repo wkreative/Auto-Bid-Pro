@@ -113,7 +113,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                 <div className="space-y-4 mb-8">
                   <div className="flex justify-between items-center p-4 bg-white/5 rounded-2xl">
                     <span className="text-gray-300">Precio Inicial de Subasta</span>
-                    <span className="text-2xl font-bold text-white">${vehicle.starting_price?.toLocaleString()}</span>
+                    <span className="text-2xl font-bold text-white">{vehicle.starting_price == null ? 'Not Available' : `$${vehicle.starting_price.toLocaleString()}`}</span>
                   </div>
                   {vehicle.estimated_resale_value && (
                     <div className="flex justify-between items-center p-4 border border-green-500/20 bg-green-500/5 rounded-2xl">
@@ -124,7 +124,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
                 </div>
 
                 <ResaleCalculator
-                  startingPrice={vehicle.starting_price || 0}
+                  startingPrice={vehicle.starting_price}
                   estimatedResaleValue={vehicle.estimated_resale_value}
                 />
 

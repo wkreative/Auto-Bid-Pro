@@ -82,7 +82,7 @@ export default async function AdminVehiclesPage({ searchParams }: { searchParams
                     </span>
                   </td>
                   <td className="p-4 font-bold">
-                    ${(vehicle.direct_sale_price || vehicle.starting_price)?.toLocaleString()}
+                    {(vehicle.direct_sale_price ?? vehicle.starting_price) == null ? 'Not Available' : `$${(vehicle.direct_sale_price ?? vehicle.starting_price).toLocaleString()}`}
                   </td>
                   <td className="p-4">
                     <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${
