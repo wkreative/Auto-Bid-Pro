@@ -10,7 +10,7 @@ export default async function RegisterPage({
   const params = await searchParams;
   const isError = !!params?.error;
   const errorMessages: Record<string, string> = {
-    validation: 'Completa tu nombre, apellido y correo. Usa una contraseña de al menos 8 caracteres.',
+    validation: 'Completa tu nombre, apellido, correo y un teléfono válido (10 a 15 dígitos). Usa una contraseña de al menos 8 caracteres.',
     email_exists: 'Ya existe una cuenta con este correo. Inicia sesión.',
     user_already_exists: 'Ya existe una cuenta con este correo. Inicia sesión.',
     weak_password: 'La contraseña no cumple los requisitos de seguridad. Usa al menos 8 caracteres y combina letras, números y símbolos.',
@@ -101,8 +101,8 @@ export default async function RegisterPage({
             </div>
 
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-300">Teléfono (opcional)</label>
-              <input id="phone" name="phone" type="tel" autoComplete="tel" className="mt-1 block w-full px-3 py-2 border border-white/10 rounded-xl bg-white/5 text-white focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-300">Teléfono</label>
+              <input id="phone" name="phone" type="tel" autoComplete="tel" required minLength={10} maxLength={30} className="mt-1 block w-full px-3 py-2 border border-white/10 rounded-xl bg-white/5 text-white focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
             </div>
 
             <div>

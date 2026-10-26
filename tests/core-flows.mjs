@@ -80,9 +80,16 @@ const {signup}=load('src/app/register/actions.ts',{
  'next/headers':{headers:async()=>new Map([['origin','https://example.com']])},
  '@/utils/supabase/server':{createClient:async()=>({auth:{signUp:async(data)=>{callCount++;payload=data;return {data:{session},error:authError}}}})}
 });
-const form=new FormData(); for(const [k,v] of Object.entries({email:' Test@example.com ',password:'password123',first_name:' Ana ',last_name:' Test '}))form.set(k,v);
+const form=new FormData(); for(const [k,v] of Object.entries({email:' Test@example.com ',password:'password123',first_name:' Ana ',last_name:' Test ',phone:' (787) 209-2995 '}))form.set(k,v);
 (async()=>{
+ for (const phone of ['', '   ', '123', 'abcdefghij', '+1234567890123456']) {
+   form.set('phone', phone);
+   await assert.rejects(signup(form), {message:'/register?error=validation'});
+ }
+ assert.equal(callCount, 0);
+ form.set('phone', ' (787) 209-2995 ');
  await assert.rejects(signup(form),{message:'/register?confirmation=true'});
+ assert.equal(payload.options.data.phone,'(787) 209-2995');
  assert.equal(payload.email,'test@example.com'); assert.equal(payload.options.data.first_name,'Ana');assert.equal(payload.options.emailRedirectTo,'https://example.com/auth/callback');
  session={access_token:'test'};await assert.rejects(signup(form),{message:'/dashboard'});
  authError={message:'rejected'};await assert.rejects(signup(form),{message:'/register?error=true'});

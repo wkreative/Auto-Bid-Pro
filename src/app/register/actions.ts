@@ -11,7 +11,9 @@ export async function signup(formData: FormData) {
   const first_name = String(formData.get('first_name') || '').trim()
   const phone = String(formData.get('phone') || '').trim()
   const last_name = String(formData.get('last_name') || '').trim()
-  if (!first_name || !last_name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 8) {
+  const phoneDigits = phone.replace(/\D/g, '')
+  const validPhone = /^[+\d\s().-]+$/.test(phone) && phoneDigits.length >= 10 && phoneDigits.length <= 15
+  if (!validPhone || !first_name || !last_name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 8) {
     redirect('/register?error=validation')
   }
   const supabase = await createClient()

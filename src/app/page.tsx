@@ -35,8 +35,8 @@ export default function Home() {
               <Link href="/register" className="bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-full font-medium transition-all duration-200 text-center flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(14,165,233,0.4)]">
                 Crear Cuenta <ArrowRight className="h-5 w-5" />
               </Link>
-              <Link href="#pricing" className="glass hover:bg-white/5 text-white px-8 py-4 rounded-full font-medium transition-all duration-200 text-center">
-                Ver Planes
+              <Link href="/register" className="glass hover:bg-white/5 text-white px-8 py-4 rounded-full font-medium transition-all duration-200 text-center">
+                Explorar Inventario
               </Link>
             </div>
           </div>
@@ -187,7 +187,7 @@ export default function Home() {
               <p className="text-gray-400 mb-6">Haz realidad la compra de tu vehículo con planes de financiamiento flexibles. Aprobación rápida y tasas competitivas.</p>
               <ul className="space-y-3 mb-8">
                 {[
-                  'Tasas desde 8.9% anual',
+                  'Tasas desde 3.95% anual',
                   'Plazos de 12 a 60 meses',
                   'Aprobación en 24-48 horas',
                   'Sin penalización por pago anticipado'
@@ -198,7 +198,7 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-              <Link href="#pricing" className="inline-flex items-center gap-2 text-primary hover:text-blue-300 font-bold transition-colors">
+              <Link href="/register" className="inline-flex items-center gap-2 text-primary hover:text-blue-300 font-bold transition-colors">
                 Solicitar Financiamiento <ArrowRight className="h-4 w-4" />
               </Link>
               <div className="absolute -bottom-10 -right-10 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -240,51 +240,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="py-24 bg-[#0a0a0a]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Suscripción Premium</h2>
-            <p className="text-gray-400 max-w-2xl mx-auto">Un único plan con acceso total a todas las herramientas de la plataforma.</p>
-          </div>
-
-          <div className="max-w-lg mx-auto glass rounded-3xl p-8 border border-primary/30 relative">
-            <div className="absolute top-0 right-8 transform -translate-y-1/2">
-              <span className="bg-primary text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Más Popular</span>
-            </div>
-
-            <div className="mb-8">
-              <h3 className="text-2xl font-bold mb-2">Pro Access</h3>
-              <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-bold">$99</span>
-                <span className="text-gray-400">/ mes</span>
-              </div>
-              <p className="text-gray-400 mt-4">Acceso ilimitado al inventario privado de vehículos y herramientas de análisis.</p>
-            </div>
-
-            <ul className="space-y-4 mb-8">
-              {[
-                'Acceso a todo el inventario de vehículos',
-                'Reportes de condición y daños detallados',
-                'Calculadora de margen de ganancia',
-                'Realizar ofertas ilimitadas',
-                'Alertas de vehículos personalizados',
-                'Soporte prioritario 24/7'
-              ].map((feature, idx) => (
-                <li key={idx} className="flex items-center gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
-                  <span className="text-gray-300">{feature}</span>
-                </li>
-              ))}
-            </ul>
-
-            <Link href="/register?plan=pro" className="block w-full bg-white text-black hover:bg-gray-200 text-center py-4 rounded-xl font-bold transition-colors">
-              Comenzar Ahora
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {/* FAQ */}
       <section id="faq" className="py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -295,8 +250,8 @@ export default function Home() {
           <div className="space-y-4">
             {[
               {
-                q: "¿Por qué necesito una suscripción para ver los vehículos?",
-                a: "Mantenemos un inventario cerrado para proteger los precios reales de subasta y garantizar que las oportunidades sean exclusivas para nuestra comunidad de compradores serios e inversores."
+                q: "¿Cómo puedo ver los vehículos?",
+                a: "Crea tu cuenta e inicia sesión para acceder al inventario, revisar los detalles de cada vehículo y enviar tus ofertas."
               },
               {
                 q: "¿Cómo se calculan los costos estimados de reparación?",
@@ -305,10 +260,6 @@ export default function Home() {
               {
                 q: "¿Qué pasa después de que mi oferta es aprobada?",
                 a: "Nos comunicaremos contigo para coordinar el pago del vehículo. Una vez recibido, gestionaremos la documentación y, si lo deseas, coordinaremos el transporte hasta tu ubicación."
-              },
-              {
-                q: "¿Puedo cancelar mi suscripción en cualquier momento?",
-                a: "Sí, puedes cancelar tu suscripción mensual en cualquier momento desde tu panel de usuario sin penalizaciones."
               }
             ].map((faq, idx) => (
               <div key={idx} className="glass p-6 rounded-2xl cursor-pointer group hover:bg-white/[0.02] transition-colors">
