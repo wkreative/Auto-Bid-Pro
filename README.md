@@ -61,3 +61,21 @@ En `/admin/users` se muestran nombres, correos, teléfonos, roles y fechas de re
 El botón Cerrar Sesión está disponible en ambos paneles para escritorio y móvil. Cierra la sesión del dispositivo actual, elimina sus cookies de autenticación y regresa al inicio de sesión.
 
 La migración `supabase/migrations/202610070001_super_admin_contacts.sql` protege los perfiles contra escritura directa desde clientes autenticados. `is_admin()` consulta metadata actual de Auth, por lo que retirar un rol invalida también el acceso directo a los datos. El registro permite guardar un teléfono opcional.
+
+## Recuperación de contraseña
+
+El enlace «¿Olvidaste tu contraseña?» de `/login` permite solicitar un correo y elegir una contraseña nueva. Los enlaces vencidos permiten solicitar otro correo.
+
+### Configuración en Supabase
+
+1. En Authentication → URL Configuration, configura Site URL como `https://www.prautobroker.com`.
+2. Añade a Redirect URLs `https://www.prautobroker.com/auth/callback` y `https://www.prautobroker.com/auth/callback?next=/reset-password`. En desarrollo, usa las URLs equivalentes de localhost.
+3. En Authentication → Email Templates → Reset Password, copia el contenido de `supabase/templates/recovery.html` y guarda. El enlace debe usar `{{ .SiteURL }}/auth/recovery?token_hash={{ .TokenHash }}`.
+4. Configura el proveedor de correo de Supabase para entregar los mensajes de autenticación. Desactiva el rastreo que reescriba sus enlaces.
+5. Solicita un correo nuevo después de guardar: los enlaces anteriores no cambian.
+
+La página `/auth/recovery` muestra un botón y solo verifica el token al enviar el formulario. Las previsualizaciones y los filtros de seguridad pueden abrirla sin consumir el enlace. La validación crea la sesión antes de mostrar `/reset-password`, sin depender del verificador PKCE del navegador original. Si Supabase devuelve `otp_expired`, el enlace ya fue utilizado o caducó: solicita uno nuevo. No compartas enlaces ni tokens.
+
+El callback anterior sigue disponible para los enlaces PKCE; esos enlaces requieren el navegador donde se solicitó la recuperación. `NEXT_PUBLIC_SITE_URL`, si se configura, debe coincidir con el entorno; en su ausencia se usa el origen de la solicitud.
+
+Verifica el flujo completo solicitando un correo, pulsando el botón de confirmación, guardando la contraseña nueva y comprobando que permite iniciar sesión. Los avisos de lotes usan una integración de correo independiente.
