@@ -13,7 +13,7 @@ export default async function RecoveryPage({ searchParams }: {
 }) {
   const params = await searchParams
   const tokenHash = typeof params.token_hash === 'string' ? params.token_hash : ''
-  const valid = /^[a-f0-9]{32,128}$/i.test(tokenHash)
+  const valid = /^(?:pkce_)?[a-f0-9]{32,128}$/i.test(tokenHash)
 
   // Do not verify the token on GET: mail providers may prefetch this page.
   return (

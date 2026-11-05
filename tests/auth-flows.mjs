@@ -162,13 +162,14 @@ assert.equal(await callback.GET(new Request('https://example.com/auth/callback?c
 console.log('PASS: password recovery validation, email destination, expired links and authenticated password updates.');
 
 let recoveryVerifications = 0, verificationError = null, verificationSession = true;
+let expectedTokenHash = 'a'.repeat(64);
 const confirmation = load('src/app/auth/recovery/actions.ts', {
   'next/navigation': { redirect: path => { throw new Error(path); } },
   '@/utils/supabase/server': { createClient: async () => ({ auth: {
     verifyOtp: async input => {
       recoveryVerifications++;
       assert.equal(input.type, 'recovery');
-      assert.equal(input.token_hash, 'a'.repeat(64));
+      assert.equal(input.token_hash, expectedTokenHash);
       if (verificationError instanceof Error) throw verificationError;
       return { data: { session: verificationSession ? {} : null, user: verificationSession ? gaby : null }, error: verificationError };
     },
@@ -178,6 +179,16 @@ const confirmationForm = new FormData();
 confirmationForm.set('token_hash', 'invalid');
 await assert.rejects(confirmation.confirmRecovery(confirmationForm), { message: '/forgot-password?error=expired' });
 assert.equal(recoveryVerifications, 0);
+for (const invalidToken of ['pkce_2c', 'pkce_', 'pkce_' + 'g'.repeat(64), 'pkce_' + 'a'.repeat(129)]) {
+  confirmationForm.set('token_hash', invalidToken);
+  await assert.rejects(confirmation.confirmRecovery(confirmationForm), { message: '/forgot-password?error=expired' });
+}
+assert.equal(recoveryVerifications, 0);
+expectedTokenHash = 'pkce_' + 'b'.repeat(56);
+confirmationForm.set('token_hash', expectedTokenHash);
+await assert.rejects(confirmation.confirmRecovery(confirmationForm), { message: '/reset-password' });
+assert.equal(recoveryVerifications, 1);
+expectedTokenHash = 'a'.repeat(64);
 confirmationForm.set('token_hash', 'a'.repeat(64));
 await assert.rejects(confirmation.confirmRecovery(confirmationForm), { message: '/reset-password' });
 verificationError = { code: 'otp_expired' };
@@ -192,10 +203,13 @@ const recoveryPage = load('src/app/auth/recovery/page.tsx', {
   'next/link': { default: 'a' },
 }).default;
 const { renderToStaticMarkup } = dependency('react-dom/server');
-for (let preview = 0; preview < 2; preview++) {
-  const html = renderToStaticMarkup(await recoveryPage({ searchParams: Promise.resolve({ token_hash: 'a'.repeat(64) }) }));
+for (const tokenHash of ['a'.repeat(64), 'pkce_' + 'b'.repeat(56)]) {
+ for (let preview = 0; preview < 2; preview++) {
+  const html = renderToStaticMarkup(await recoveryPage({ searchParams: Promise.resolve({ token_hash: tokenHash }) }));
   assert.ok(html.includes('Continuar para cambiar mi contraseña'));
   assert.ok(html.includes('name="token_hash"'));
+  assert.ok(html.includes(`value="${tokenHash}"`));
+ }
 }
 const incompleteHtml = renderToStaticMarkup(await recoveryPage({ searchParams: Promise.resolve({ token_hash: ['one', 'two'] }) }));
 assert.ok(incompleteHtml.includes('Este enlace está incompleto'));

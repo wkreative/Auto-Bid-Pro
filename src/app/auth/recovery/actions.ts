@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/server'
 
 export async function confirmRecovery(formData: FormData) {
   const tokenHash = String(formData.get('token_hash') || '')
-  if (!/^[a-f0-9]{32,128}$/i.test(tokenHash)) redirect('/forgot-password?error=expired')
+  if (!/^(?:pkce_)?[a-f0-9]{32,128}$/i.test(tokenHash)) redirect('/forgot-password?error=expired')
   const supabase = await createClient()
   let verified = false
   try {
