@@ -1,8 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createBatchId } from '@/lib/import-batches';
-import { Upload, Loader2, CheckCircle2, Image as ImageIcon, FileSpreadsheet, AlertTriangle, XCircle } from 'lucide-react';
-import Link from 'next/link';
+import { Upload, Loader2, CheckCircle2, Image as ImageIcon, FileSpreadsheet, AlertTriangle, XCircle, Trash2 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
 type RowStatus = 'ok' | 'advertencia' | 'error';
@@ -101,6 +100,42 @@ export default function FirstBankImport({ initialBatchId, account }: { initialBa
   const [progress, setProgress] = useState<string | null>(null);
   const [result, setResult] = useState<{ ok: number; fail: number; errs: string[]; batchId?: string; photos?: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [batches, setBatches] = useState<{ batch: string; count: number }[]>([]);
+  const [batchesLoading, setBatchesLoading] = useState(true);
+  const [batchesError, setBatchesError] = useState<string | null>(null);
+  const [deletingBatch, setDeletingBatch] = useState<string | null>(null);
+
+  const loadBatches = async () => {
+    setBatchesLoading(true); setBatchesError(null);
+    try {
+      const res = await fetch('/api/admin/import-first-bank', { cache: 'no-store' });
+      const data = await res.json();
+      if (!res.ok || !Array.isArray(data.batches)) throw new Error('No se pudieron cargar los lotes.');
+      setBatches(data.batches);
+    } catch {
+      setBatchesError('No se pudieron cargar los lotes.');
+    } finally {
+      setBatchesLoading(false);
+    }
+  };
+
+  useEffect(() => { void loadBatches(); }, []);
+
+  const deleteBatch = async (batch: string) => {
+    if (!confirm(`¿Eliminar todo el lote ${batch}? Se borrarán todos los vehículos de ese lote y sus fotos.`)) return;
+    setDeletingBatch(batch);
+    try {
+      const res = await fetch('/api/admin/delete-batch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ batch }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'No se pudo borrar el lote.');
+      alert(`${data.deleted} vehículos eliminados del lote ${batch}.`);
+      await loadBatches();
+    } catch (err: any) {
+      alert('Error: ' + (err.message || 'No se pudo borrar el lote.'));
+    } finally {
+      setDeletingBatch(null);
+    }
+  };
 
   const valid = (vehicles || []).filter(v => v.status !== 'error');
   const withErrors = (vehicles || []).filter(v => v.status === 'error');
@@ -194,6 +229,7 @@ export default function FirstBankImport({ initialBatchId, account }: { initialBa
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo importar el listado.');
       setResult({ ...data, photos: uploadedPhotos });
+      void loadBatches();
     } catch (err: any) {
       setError(err.message || 'Error al importar.');
     } finally {
@@ -209,6 +245,19 @@ export default function FirstBankImport({ initialBatchId, account }: { initialBa
         {account && <p className="text-xs text-gray-500 mt-1">Sesión: {account.email} · Rol: {account.role || 'sin rol'}</p>}
         <p className="text-xs text-gray-500 mt-1">Lote de importación: <span className="font-mono">{batchId}</span></p>
       </div>
+
+      {/* Instrucciones de uso */}
+      <section className="rounded-2xl border border-white/10 bg-white/[0.02] p-6">
+        <h2 className="font-bold text-lg">Cómo usar esta página</h2>
+        <ol className="list-decimal ml-5 mt-2 space-y-1 text-sm text-gray-300">
+          <li><b className="text-white">Sube el listado CSV</b> de la subasta (sección 1). Debe tener las columnas Lote, Marca, Modelo, Año, VIN, Tablilla, Color, Millaje, Puertas y Observaciones.</li>
+          <li><b className="text-white">Revisa la tabla:</b> los vehículos con VIN malo (letras I, O, Q o un largo distinto de 17) quedan en rojo y no se importan. Los de “Revisar” (sin millaje o puertas raras) sí se importan.</li>
+          <li><b className="text-white">Sube las fotos</b> (sección 2), todas a la vez. Nombra cada foto con el VIN completo o con sus últimos 6 a 8 caracteres (ej. <span className="font-mono">067864_1.jpg</span>). La primera foto de cada vehículo queda como principal.</li>
+          <li><b className="text-white">Importa en Borrador.</b> Los vehículos quedan guardados pero ningún comprador los ve.</li>
+          <li><b className="text-white">Después de la subasta,</b> publica solo los vehículos que compraste, desde Vehículos. Los que no compraste, bórralos por lote en la sección de abajo.</li>
+          <li><b className="text-white">Para borrar un lote de First Bank,</b> usa la sección “Lotes de First Bank” de esta misma página. No hace falta ir a Subir Múltiples Vehículos.</li>
+        </ol>
+      </section>
 
       {/* Sección 1: listado */}
       <section className="rounded-2xl border border-white/10 bg-white/[0.02] p-6">
@@ -312,11 +361,31 @@ export default function FirstBankImport({ initialBatchId, account }: { initialBa
               <p className="font-bold text-green-400 flex items-center gap-2"><CheckCircle2 className="h-5 w-5" /> Importación completada</p>
               <p className="mt-1">Vehículos importados: {result.ok} · Fallidos: {result.fail} · Fotos subidas: {result.photos ?? 0} · Lote: <span className="font-mono">{result.batchId}</span></p>
               {result.errs?.length > 0 && <ul className="list-disc ml-5 mt-2 text-red-300">{result.errs.map((e, i) => <li key={i}>{e}</li>)}</ul>}
-              <Link href="/admin/vehicles" className="text-red-400 font-bold underline mt-2 inline-block">Ver vehículos →</Link>
+              <a href="/admin/vehicles" className="text-red-400 font-bold underline mt-2 inline-block">Ver vehículos →</a>
             </div>
           )}
         </section>
       )}
+
+      {/* Lotes de First Bank: borrado */}
+      <section className="rounded-2xl border border-white/10 bg-white/[0.02] p-6">
+        <h2 className="font-bold text-lg">Lotes de First Bank</h2>
+        <p className="text-sm text-gray-400 mt-1">Cada importación genera un lote. Para borrar los vehículos de un lote (por ejemplo, los de una prueba o los que no se compraron en la subasta), elimínalo aquí. No hace falta ir a Subir Múltiples Vehículos.</p>
+        {batchesLoading && <p className="text-sm text-gray-400 mt-3">Cargando lotes…</p>}
+        {batchesError && <p className="text-sm text-red-400 mt-3">{batchesError} <button type="button" onClick={() => void loadBatches()} className="underline">Reintentar</button></p>}
+        {!batchesLoading && !batchesError && batches.length === 0 && <p className="text-sm text-gray-400 mt-3">No hay lotes de First Bank todavía. Aparecerán aquí al terminar una importación.</p>}
+        <div className="space-y-2 mt-3">
+          {batches.map(b => (
+            <div key={b.batch} className="flex flex-wrap justify-between items-center gap-2 bg-white/5 p-3 rounded-xl">
+              <span className="font-mono text-sm break-all">{b.batch} <span className="text-gray-400">· {b.count} vehículos</span></span>
+              <button type="button" onClick={() => void deleteBatch(b.batch)} disabled={deletingBatch !== null} className="bg-red-500/20 hover:bg-red-500/30 disabled:opacity-50 text-red-400 px-3 py-1 rounded-lg text-sm flex items-center gap-1">
+                <Trash2 className="h-3 w-3" /> {deletingBatch === b.batch ? 'Borrando… no cierres la página' : 'Eliminar lote'}
+              </button>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-gray-400 mt-2">Borrar un lote puede tardar unos minutos. Espera el mensaje de confirmación y no pulses dos veces.</p>
+      </section>
     </div>
   );
 }
