@@ -3,9 +3,37 @@ import { isBatchId } from '@/lib/import-batches';
 import { createClient } from '@/utils/supabase/server';
 import { publicationText } from '@/lib/publication';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { requireAdmin } from '@/utils/supabase/require-admin';
 import { NextRequest, NextResponse } from 'next/server';
 
 const VIN_RE = /^[A-HJ-NPR-Z0-9]{17}$/;
+
+export async function GET() {
+  try {
+    await requireAdmin();
+    const supabase = createAdminClient();
+    const counts = new Map<string, number>();
+    const pageSize = 1000;
+    for (let offset = 0; ; offset += pageSize) {
+      const { data, error } = await supabase.from('vehicles')
+        .select('internal_notes, created_at')
+        .not('internal_notes', 'is', null)
+        .ilike('internal_notes', '%First Bank Subasta 1068%')
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .range(offset, offset + pageSize - 1);
+      if (error) throw error;
+      for (const row of data || []) {
+        const batch = row.internal_notes?.match(/BATCH:([^\s|]+)/)?.[1];
+        if (batch) counts.set(batch, (counts.get(batch) || 0) + 1);
+      }
+      if (!data || data.length < pageSize) break;
+    }
+    return NextResponse.json({ batches: [...counts].map(([batch, count]) => ({ batch, count })) }, { headers: { 'Cache-Control': 'no-store' } });
+  } catch {
+    return NextResponse.json({ error: 'No se pudieron cargar los lotes.' }, { status: 500 });
+  }
+}
 
 type FBVehicleInput = {
   lote?: string;
